@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Menu, X } from "lucide-react";
-
+import { NavLink } from "react-router-dom";
 function Slidebar({
   title = "Admin Panel",
   menuItems = [],
@@ -47,22 +47,27 @@ function Slidebar({
         {/* Navigation */}
         <nav className="space-y-1 mt-2 p-2">
           {menuItems.map((item, index) => (
-            <a
+            <NavLink
               key={index}
-              href={item.href}
-              className="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 hover:text-blue-600 transition hover:rounded-lg"
+              to={item.href}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-3 transition rounded-lg
+        ${
+          isActive
+            ? "bg-blue-100 text-blue-600"
+            : "hover:bg-blue-50 hover:text-blue-600"
+        }`
+              }
             >
               <item.icon size={20} />
               <span className="text-sm">{item.label}</span>
-            </a>
+            </NavLink>
           ))}
         </nav>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 mt-20 md:mt-0">
-        {children}
-      </main>
+      <main className="flex-1 p-6 mt-20 md:mt-0">{children}</main>
     </div>
   );
 }
