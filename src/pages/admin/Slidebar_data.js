@@ -1,18 +1,24 @@
-import { Home, Settings, Users } from "lucide-react";
+import { ListOrdered , ShoppingCart , Users , LayoutDashboard } from "lucide-react";
+
  export const menuItems = [
     {
       label: "Dashboard",
-      href: "/dashboard",
-      icon: Home,
+      href: "/admin_dashboard",
+      icon: LayoutDashboard,
     },
     {
-      label: "Users",
-      href: "/users",
+      label: "Salesman",
+      href: "/admin_users",
       icon: Users,
     },
     {
-      label: "Settings",
-      href: "/settings",
-      icon: Settings,
+      label: "Products",
+      href: "/admin_product",
+      icon: ShoppingCart ,
+    },
+    {
+      label:"Orders",
+      href:"/admin_orders",
+      icon: ListOrdered
     },
   ];
