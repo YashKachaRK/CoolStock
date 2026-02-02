@@ -1,6 +1,6 @@
 import React from 'react'
 import Slidebar from "../../components/Slidebar";
-import { menuItems } from "../admin/SLidebar_Data";
+import { menuItems } from "../admin/Slidebar_data";
 
 function Products_admin() {
   return (

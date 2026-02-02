@@ -1,19 +1,19 @@
-import { LayoutDashboard, ShoppingBag, Receipt } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart } from "lucide-react";
 
 export const salesMenuItems = [
   {
-    label: "Sales Dashboard",
+    label: "Dashboard",
     href: "/sale_dashboard",
     icon: LayoutDashboard,
   },
   {
-    label: "My Inventory",
+    label: "Inventory",
     href: "/sale_inventory",
-    icon: ShoppingBag,
+    icon: Package, // Use Package for inventory
   },
   {
     label: "New Sale",
     href: "/sale_orders",
-    icon: Receipt,
+    icon: ShoppingCart, // Use ShoppingCart for selling
   },
 ];
