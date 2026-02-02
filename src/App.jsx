@@ -4,6 +4,7 @@ import Login from "./components/Login";
 import Dashboard_admin from "./pages/admin/Dashboard_admin";
 import Dashboard_sales from "./pages/sales/Dashboard_sales";
 import ProtectRoute from "./components/ProtectRoute";
+import StockManagement_admin from "./pages/admin/StockManagement_admin";
 
 // Admin
 import Order_admin from "./pages/admin/Order_admin";
@@ -29,6 +30,7 @@ function App() {
         <Route path="/admin_users" element={<Salesman_admin />} />
         <Route path="/admin_product" element={<Products_admin />} />
         <Route path="/admin_orders" element={<Order_admin />} />
+        <Route path="/admin_stock_update" element={<ProtectRoute><StockManagement_admin /></ProtectRoute>} />
 
         {/* Sales dashboard */}
         <Route
