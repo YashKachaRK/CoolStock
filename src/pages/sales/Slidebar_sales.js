@@ -1,24 +1,19 @@
-import { ListOrdered , ShoppingCart , Users , LayoutDashboard } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Receipt } from "lucide-react";
 
- export const menuItems = [
-    {
-      label: "Dashboard",
-      href: "/admin_dashboard",
-      icon: LayoutDashboard,
-    },
-    {
-      label: "Salesman",
-      href: "/admin_users",
-      icon: Users,
-    },
-    {
-      label: "Products",
-      href: "/admin_product",
-      icon: ShoppingCart ,
-    },
-    {
-      label:"Orders",
-      href:"/admin_orders",
-      icon: ListOrdered
-    },
-  ];
+export const salesMenuItems = [
+  {
+    label: "Sales Dashboard",
+    href: "/sale_dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    label: "My Inventory",
+    href: "/sale_inventory",
+    icon: ShoppingBag,
+  },
+  {
+    label: "New Sale",
+    href: "/sale_orders",
+    icon: Receipt,
+  },
+];
