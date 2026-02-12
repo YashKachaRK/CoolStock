@@ -4,6 +4,7 @@ import Slidebar from "../../components/Slidebar";
 import { menuItems } from "./Slidebar_data";
 import { Search, Plus, Edit2, Trash2 } from "lucide-react";
 
+
 const Products_admin = () => {
   const navigate = useNavigate();
 
@@ -14,6 +15,7 @@ const Products_admin = () => {
     { id: 3, name: "Strawberry Swirl", size: "5L Box", price: 28.00, status: "Active", image: "https://placehold.co/40x40?text=Berry" },
     { id: 4, name: "Dark Chocolate", size: "Pint", price: 12.00, status: "Active", image: "https://placehold.co/40x40?text=Choco" },
   ];
+
 
   return (
     <Slidebar title="CoolStock Admin" menuItems={menuItems}>
