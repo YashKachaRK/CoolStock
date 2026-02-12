@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 // Components
 import Login from "./components/Login";
 import ProtectRoute from "./components/ProtectRoute";
+import StockManagement_admin from "./pages/admin/StockManagement_admin";
 
 // Admin Pages
 import Dashboard_admin from "./pages/admin/Dashboard_admin";
@@ -23,6 +24,19 @@ function App() {
         {/* Public Route */}
         <Route path="/" element={<Login />} />
 
+        {/* Admin dashboard */}
+        <Route
+          path="/admin_dashboard"
+          element={
+            <ProtectRoute>
+              <Dashboard_admin />
+            </ProtectRoute>
+          }
+        />
+        <Route path="/admin_users" element={<Salesman_admin />} />
+        <Route path="/admin_product" element={<Products_admin />} />
+        <Route path="/admin_orders" element={<Order_admin />} />
+        <Route path="/admin_stock_update" element={<ProtectRoute><StockManagement_admin /></ProtectRoute>} />
         {/* Admin Section */}
         <Route path="/admin_dashboard" element={<ProtectRoute><Dashboard_admin /></ProtectRoute>} />
         <Route path="/admin_users" element={<ProtectRoute><Salesman_admin /></ProtectRoute>} />
