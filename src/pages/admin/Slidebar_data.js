@@ -1,4 +1,4 @@
-import { ListOrdered , ShoppingCart , Users , LayoutDashboard } from "lucide-react";
+import { ListOrdered , ShoppingCart , Users , LayoutDashboard, BoxIcon } from "lucide-react";
 
  export const menuItems = [
     {
@@ -20,5 +20,10 @@ import { ListOrdered , ShoppingCart , Users , LayoutDashboard } from "lucide-rea
       label:"Orders",
       href:"/admin_orders",
       icon: ListOrdered
-    },
+   },
+   {
+      label: "Manage Stock",
+      href: "/admin_stock_update",
+      icon: BoxIcon,
+    }
   ];

@@ -1,20 +1,27 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Login from "./components/Login";
-import Dashboard_admin from "./pages/admin/Dashboard_admin";
-import Dashboard_sales from "./pages/sales/Dashboard_sales";
-import ProtectRoute from "./components/ProtectRoute";
 
-// Admin
+// Components
+import Login from "./components/Login";
+import ProtectRoute from "./components/ProtectRoute";
+import StockManagement_admin from "./pages/admin/StockManagement_admin";
+
+// Admin Pages
+import Dashboard_admin from "./pages/admin/Dashboard_admin";
 import Order_admin from "./pages/admin/Order_admin";
 import Products_admin from "./pages/admin/Products_admin";
 import Salesman_admin from "./pages/admin/Salesman_admin";
+
+// Sales Pages
+import Dashboard_sales from "./pages/sales/Dashboard_sales";
+import Inventory_sales from "./pages/sales/Inventory_sales";
+import Order_sales from "./pages/sales/Order_sales";
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Login page */}
+        {/* Public Route */}
         <Route path="/" element={<Login />} />
 
         {/* Admin dashboard */}
@@ -29,16 +36,20 @@ function App() {
         <Route path="/admin_users" element={<Salesman_admin />} />
         <Route path="/admin_product" element={<Products_admin />} />
         <Route path="/admin_orders" element={<Order_admin />} />
+        <Route path="/admin_stock_update" element={<ProtectRoute><StockManagement_admin /></ProtectRoute>} />
+        {/* Admin Section */}
+        <Route path="/admin_dashboard" element={<ProtectRoute><Dashboard_admin /></ProtectRoute>} />
+        <Route path="/admin_users" element={<ProtectRoute><Salesman_admin /></ProtectRoute>} />
+        <Route path="/admin_product" element={<ProtectRoute><Products_admin /></ProtectRoute>} />
+        <Route path="/admin_orders" element={<ProtectRoute><Order_admin /></ProtectRoute>} />
 
-        {/* Sales dashboard */}
-        <Route
-          path="/sale_dashboard"
-          element={
-            <ProtectRoute>
-              <Dashboard_sales />
-            </ProtectRoute>
-          }
-        />
+        {/* Sales Section */}
+        <Route path="/sale_dashboard" element={<ProtectRoute><Dashboard_sales /></ProtectRoute>} />
+        <Route path="/sale_inventory" element={<ProtectRoute><Inventory_sales /></ProtectRoute>} />
+        <Route path="/sale_orders" element={<ProtectRoute><Order_sales /></ProtectRoute>} />
+
+        {/* 404 Redirect - Optional but helpful */}
+        <Route path="*" element={<div className="p-10 text-center">404: Page Not Found</div>} />
       </Routes>
     </Router>
   );

@@ -43,6 +43,22 @@ function Dashboard_admin() {
       </div>
     </Slidebar>
   );
-}
+};
+
+// Sub-component for the stat cards
+const StatCard = ({ icon, label, value, trend, color = "green" }) => (
+  <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden">
+    <div className="flex justify-between items-start">
+      <div className="p-2 bg-gray-50 rounded-lg">{icon}</div>
+      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${color === 'red' ? 'bg-red-50 text-red-500' : 'bg-green-50 text-green-500'}`}>
+        {trend}
+      </span>
+    </div>
+    <div className="mt-4">
+      <p className="text-gray-400 text-xs font-medium">{label}</p>
+      <h2 className="text-2xl font-bold mt-1">{value}</h2>
+    </div>
+  </div>
+);
 
 export default Dashboard_admin;
