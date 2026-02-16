@@ -70,14 +70,17 @@ function Slidebar({
 
         {/* Logout Button */}
         <div className="p-4 border-t">
-          <button
+
+          <NavLink
+          to="/"
             onClick={onLogout}
             className="w-full flex items-center gap-3 px-4 py-3 text-sm rounded-lg
               hover:bg-red-50 hover:text-red-600 transition"
           >
             <LogOut size={20} />
             Logout
-          </button>
+          </NavLink>
+          
         </div>
       </aside>
 
