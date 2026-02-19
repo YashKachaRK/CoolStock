@@ -7,12 +7,12 @@ export const salesMenuItems = [
     icon: LayoutDashboard,
   },
   {
-    label: "Inventory",
-    href: "/sale_inventory",
+    label: "New Orders",
+    href: "/new_orders",
     icon: Package, // Use Package for inventory
   },
   {
-    label: "New Sale",
+    label: "Orders",
     href: "/sale_orders",
     icon: ShoppingCart, // Use ShoppingCart for selling
   },

@@ -45,7 +45,7 @@ function App() {
 
         {/* Sales Section */}
         <Route path="/sale_dashboard" element={<ProtectRoute><Dashboard_sales /></ProtectRoute>} />
-        <Route path="/sale_inventory" element={<ProtectRoute><Inventory_sales /></ProtectRoute>} />
+        <Route path="/new_orders" element={<ProtectRoute><Inventory_sales /></ProtectRoute>} />
         <Route path="/sale_orders" element={<ProtectRoute><Order_sales /></ProtectRoute>} />
 
         {/* 404 Redirect - Optional but helpful */}
