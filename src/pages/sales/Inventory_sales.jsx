@@ -39,10 +39,8 @@ function Inventory_sales() {
       if (existing.qty < product.stock) {
         setCart(
           cart.map((item) =>
-            item.id === product.id
-              ? { ...item, qty: item.qty + 1 }
-              : item
-          )
+            item.id === product.id ? { ...item, qty: item.qty + 1 } : item,
+          ),
         );
       } else {
         alert("Stock limit reached!");
@@ -68,13 +66,13 @@ function Inventory_sales() {
           }
           return item;
         })
-        .filter((item) => item.qty > 0)
+        .filter((item) => item.qty > 0),
     );
   };
 
   const totalAmount = cart.reduce(
     (total, item) => total + item.price * item.qty,
-    0
+    0,
   );
 
   // ✅ Generate PDF Function
@@ -134,7 +132,6 @@ function Inventory_sales() {
   return (
     <Slidebar title="Sales Panel" menuItems={salesMenuItems}>
       <div className="p-4 bg-gray-50 min-h-screen">
-
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Take New Order</h1>
@@ -149,19 +146,27 @@ function Inventory_sales() {
         {/* Products */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
           {products.map((product) => (
-            <div key={product.id} className="bg-white p-5 rounded-xl shadow border">
+            <div
+              key={product.id}
+              className="bg-white p-5 rounded-xl shadow border"
+            >
               <h3 className="font-semibold">{product.name}</h3>
               <p>{product.pcs} PCS / Box</p>
               <p>Stock: {product.stock}</p>
               <p className="text-blue-600 font-bold">₹{product.price}</p>
 
-              <button
-                onClick={() => addToCart(product)}
-                disabled={product.stock === 0}
-                className="mt-4 w-full py-2 rounded-lg bg-blue-500 text-white"
-              >
-                Add to Order
-              </button>
+              {product.stock > 0 ? (
+                <button
+                  onClick={() => addToCart(product)}
+                  className="mt-4 w-full py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white"
+                >
+                  Add to Order
+                </button>
+              ) : (
+                <div className="mt-4 w-full py-2 rounded-lg bg-red-100 text-red-600 text-center font-semibold">
+                  Out of Stock
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -172,7 +177,10 @@ function Inventory_sales() {
             <h2 className="font-semibold mb-4">Order Details</h2>
 
             {cart.map((item) => (
-              <div key={item.id} className="flex justify-between items-center mb-3">
+              <div
+                key={item.id}
+                className="flex justify-between items-center mb-3"
+              >
                 <span>{item.name}</span>
 
                 <div className="flex items-center gap-2">
