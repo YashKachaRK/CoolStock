@@ -16,6 +16,8 @@ import Salesman_admin from "./pages/admin/Salesman_admin";
 import Dashboard_sales from "./pages/sales/Dashboard_sales";
 import Inventory_sales from "./pages/sales/Inventory_sales";
 import Order_sales from "./pages/sales/Order_sales";
+import OrderDetails_sales from "./pages/sales/OrderDetails_sales";
+
 
 function App() {
   return (
@@ -47,7 +49,7 @@ function App() {
         <Route path="/sale_dashboard" element={<ProtectRoute><Dashboard_sales /></ProtectRoute>} />
         <Route path="/new_orders" element={<ProtectRoute><Inventory_sales /></ProtectRoute>} />
         <Route path="/sale_orders" element={<ProtectRoute><Order_sales /></ProtectRoute>} />
-
+        <Route path="/order-details/:id" element={<ProtectRoute><OrderDetails_sales /></ProtectRoute>} />
         {/* 404 Redirect - Optional but helpful */}
         <Route path="*" element={<div className="p-10 text-center">404: Page Not Found</div>} />
       </Routes>
