@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, ShoppingCart } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Package } from "lucide-react";
 
 export const salesMenuItems = [
   {

@@ -141,6 +141,25 @@ function Dashboard_sales() {
       </div>
     </Slidebar>
   );
-}
+};
+
+/* Sub-component for Stats */
+const SalesStatCard = ({ title, value, icon, color }) => {
+  const colors = {
+    blue: "bg-blue-50 text-blue-600",
+    green: "bg-green-50 text-green-600",
+    orange: "bg-orange-50 text-orange-600",
+    purple: "bg-purple-50 text-purple-600",
+  };
+  return (
+    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+      <div className={`p-3 rounded-xl ${colors[color]}`}>{icon}</div>
+      <div>
+        <p className="text-gray-400 text-xs font-medium uppercase">{title}</p>
+        <h2 className="text-2xl font-bold text-gray-800">{value}</h2>
+      </div>
+    </div>
+  );
+};
 
 export default Dashboard_sales;
