@@ -3,14 +3,16 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 // Components
 import Login from "./components/Login";
+import ForgotPassword from "./components/ForgotPassword";
+import ResetPassword from "./components/ResetPassword";
 import ProtectRoute from "./components/ProtectRoute";
-import StockManagement_admin from "./pages/admin/StockManagement_admin";
 
 // Admin Pages
 import Dashboard_admin from "./pages/admin/Dashboard_admin";
 import Order_admin from "./pages/admin/Order_admin";
 import Products_admin from "./pages/admin/Products_admin";
 import Salesman_admin from "./pages/admin/Salesman_admin";
+import StockManagement_admin from "./pages/admin/StockManagement_admin";
 
 // Sales Pages
 import Dashboard_sales from "./pages/sales/Dashboard_sales";
@@ -21,35 +23,49 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Public Route */}
+        {/* --- Public Routes --- */}
         <Route path="/" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* Admin dashboard */}
-        <Route
-          path="/admin_dashboard"
-          element={
-            <ProtectRoute>
-              <Dashboard_admin />
-            </ProtectRoute>
-          }
+        {/* --- Admin Section (Protected) --- */}
+        <Route 
+          path="/admin_dashboard" 
+          element={<ProtectRoute><Dashboard_admin /></ProtectRoute>} 
         />
-        <Route path="/admin_users" element={<Salesman_admin />} />
-        <Route path="/admin_product" element={<Products_admin />} />
-        <Route path="/admin_orders" element={<Order_admin />} />
-        <Route path="/admin_stock_update" element={<ProtectRoute><StockManagement_admin /></ProtectRoute>} />
-        {/* Admin Section */}
-        <Route path="/admin_dashboard" element={<ProtectRoute><Dashboard_admin /></ProtectRoute>} />
-        <Route path="/admin_users" element={<ProtectRoute><Salesman_admin /></ProtectRoute>} />
-        <Route path="/admin_product" element={<ProtectRoute><Products_admin /></ProtectRoute>} />
-        <Route path="/admin_orders" element={<ProtectRoute><Order_admin /></ProtectRoute>} />
+        <Route 
+          path="/admin_users" 
+          element={<ProtectRoute><Salesman_admin /></ProtectRoute>} 
+        />
+        <Route 
+          path="/admin_product" 
+          element={<ProtectRoute><Products_admin /></ProtectRoute>} 
+        />
+        <Route 
+          path="/admin_orders" 
+          element={<ProtectRoute><Order_admin /></ProtectRoute>} 
+        />
+        <Route 
+          path="/admin_stock_update" 
+          element={<ProtectRoute><StockManagement_admin /></ProtectRoute>} 
+        />
 
-        {/* Sales Section */}
-        <Route path="/sale_dashboard" element={<ProtectRoute><Dashboard_sales /></ProtectRoute>} />
-        <Route path="/sale_inventory" element={<ProtectRoute><Inventory_sales /></ProtectRoute>} />
-        <Route path="/sale_orders" element={<ProtectRoute><Order_sales /></ProtectRoute>} />
+        {/* --- Sales Section (Protected) --- */}
+        <Route 
+          path="/sale_dashboard" 
+          element={<ProtectRoute><Dashboard_sales /></ProtectRoute>} 
+        />
+        <Route 
+          path="/sale_inventory" 
+          element={<ProtectRoute><Inventory_sales /></ProtectRoute>} 
+        />
+        <Route 
+          path="/sale_orders" 
+          element={<ProtectRoute><Order_sales /></ProtectRoute>} 
+        />
 
-        {/* 404 Redirect - Optional but helpful */}
-        <Route path="*" element={<div className="p-10 text-center">404: Page Not Found</div>} />
+        {/* --- 404 Route --- */}
+        <Route path="*" element={<div className="p-10 text-center font-bold">404: Page Not Found</div>} />
       </Routes>
     </Router>
   );

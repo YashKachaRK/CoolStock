@@ -155,11 +155,11 @@ export default function Login() {
               Remember me
             </label>
             <a
-              onClick={(e) => e.preventDefault()}
-              className="text-blue-500 hover:underline"
-            >
-              Forgot password?
-            </a>
+  onClick={() => navigate("/forgot-password")}
+  className="text-blue-500 hover:underline cursor-pointer"
+>
+  Forgot password?
+</a>
           </div>
 
           {/* Login Button */}
