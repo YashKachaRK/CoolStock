@@ -1,102 +1,141 @@
 import React from "react";
 import Slidebar from "../../components/Slidebar";
-import { 
-  ShoppingBag, 
-  Clock, 
-  CheckCircle, 
-  IndianRupee, 
-  TrendingUp, 
-  Plus 
-} from "lucide-react";
-import { salesMenuItems } from "./Slidebar_sales"; // Matching your variable name
+import { salesMenuItems } from "./Slidebar_sales";
+import { ShoppingCart, IndianRupee, Users, Clock } from "lucide-react";
 
-const Dashboard_sales = () => {
-  // Sample data for your Salesman view
-  const recentOrders = [
-    { id: "#S101", customer: "Rajesh Kumar", amount: "₹450", status: "Delivered" },
-    { id: "#S102", customer: "Anita Desai", amount: "₹1,200", status: "Processing" },
-    { id: "#S103", customer: "Vijay Shah", amount: "₹850", status: "Delivered" },
+function Dashboard_sales() {
+  // Dummy Data
+  const stats = [
+    {
+      title: "Today's Orders",
+      value: 18,
+      icon: <ShoppingCart size={22} />,
+      color: "bg-blue-100 text-blue-600",
+    },
+    {
+      title: "Today's Revenue",
+      value: "₹12,450",
+      icon: <IndianRupee size={22} />,
+      color: "bg-green-100 text-green-600",
+    },
+    {
+      title: "Customers",
+      value: 5,
+      icon: <Users size={22} />,
+      color: "bg-purple-100 text-purple-600",
+    },
+ 
   ];
 
-  const stockAlerts = [
-    { name: "Vanilla Party Pack", stock: "24 Units", status: "In Stock" },
-    { name: "Chocolate Cone", stock: "5 Units", status: "Low Stock" },
-    { name: "Mango Delight", stock: "0 Units", status: "Out of Stock" },
+  const recentOrders = [
+    {
+      id: "ORD-2101",
+      customer: "Shree Ice Cream",
+      city: "Ahmedabad",
+      amount: 3200,
+      status: "Completed",
+    },
+    {
+      id: "ORD-2102",
+      customer: "Cool Point",
+      city: "Surat",
+      amount: 1850,
+      status: "Pending",
+    },
+    {
+      id: "ORD-2103",
+      customer: "Sweet Mart",
+      city: "Rajkot",
+      amount: 2400,
+      status: "Completed",
+    },
   ];
 
   return (
-    <Slidebar title="Sales Panel" menuItems={salesMenuItems} sidebarWidth="w-60">
-      <div className="p-6 bg-gray-50 min-h-screen">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800">Sales Overview</h1>
-            <p className="text-gray-500 mt-1">Track your daily sales and check inventory.</p>
+    <Slidebar title="Sales Panel" menuItems={salesMenuItems}>
+      <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
+
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+            Sales Dashboard
+          </h1>
+          <p className="text-gray-500 text-sm">
+            Manage your daily sales performance and customer orders.
+          </p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+          {stats.map((stat, index) => (
+            <div
+              key={index}
+              className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center justify-between hover:shadow-md transition"
+            >
+              <div>
+                <p className="text-sm text-gray-500">{stat.title}</p>
+                <h2 className="text-2xl font-bold text-gray-800 mt-1">
+                  {stat.value}
+                </h2>
+              </div>
+              <div
+                className={`w-12 h-12 flex items-center justify-center rounded-lg ${stat.color}`}
+              >
+                {stat.icon}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Recent Orders Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-700">
+              Recent Orders
+            </h2>
           </div>
-          <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold transition shadow-md">
-            <Plus size={20} />
-            New Order
-          </button>
-        </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-          <SalesStatCard title="Today's Sales" value="₹4,250" icon={<IndianRupee size={22} />} color="blue" />
-          <SalesStatCard title="Orders Done" value="12" icon={<CheckCircle size={22} />} color="green" />
-          <SalesStatCard title="Pending" value="3" icon={<Clock size={22} />} color="orange" />
-          <SalesStatCard title="Items Sold" value="48" icon={<ShoppingBag size={22} />} color="purple" />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Recent Orders Table */}
-          <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h2 className="text-lg font-bold text-gray-800 mb-6">My Recent Orders</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-gray-400 border-b text-left">
-                    <th className="pb-3">Order ID</th>
-                    <th className="pb-3">Customer</th>
-                    <th className="pb-3">Amount</th>
-                    <th className="pb-3">Status</th>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-gray-50 text-gray-400 text-xs uppercase tracking-wider">
+                  <th className="px-6 py-3">Order ID</th>
+                  <th className="px-6 py-3">Customer</th>
+                  <th className="px-6 py-3">City</th>
+                  <th className="px-6 py-3">Amount</th>
+                  <th className="px-6 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {recentOrders.map((order, index) => (
+                  <tr key={index} className="hover:bg-gray-50 transition">
+                    <td className="px-6 py-4 font-semibold text-blue-600">
+                      {order.id}
+                    </td>
+                    <td className="px-6 py-4 text-gray-700">
+                      {order.customer}
+                    </td>
+                    <td className="px-6 py-4 text-gray-500">
+                      {order.city}
+                    </td>
+                    <td className="px-6 py-4 font-bold text-gray-800">
+                      ₹{order.amount.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                          order.status === "Completed"
+                            ? "bg-green-100 text-green-600"
+                            : "bg-yellow-100 text-yellow-600"
+                        }`}
+                      >
+                        {order.status}
+                      </span>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {recentOrders.map((order) => (
-                    <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="py-4 font-medium">{order.id}</td>
-                      <td className="py-4 text-gray-600">{order.customer}</td>
-                      <td className="py-4 font-bold">{order.amount}</td>
-                      <td className="py-4">
-                        <span className={`px-3 py-1 rounded-full text-[11px] font-bold ${
-                          order.status === "Delivered" ? "bg-green-100 text-green-600" : "bg-orange-100 text-orange-600"
-                        }`}>
-                          {order.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Sidebar Alerts */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h2 className="text-lg font-bold text-gray-800 mb-6">Stock Alerts</h2>
-            <div className="space-y-4">
-              {stockAlerts.map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700">{item.name}</p>
-                    <p className="text-xs text-gray-500">{item.stock} left</p>
-                  </div>
-                  <span className={`text-[10px] font-bold ${item.status === "In Stock" ? "text-green-500" : "text-red-500"}`}>
-                    {item.status}
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

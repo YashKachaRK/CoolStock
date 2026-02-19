@@ -1,146 +1,173 @@
 import React, { useState } from "react";
 import Slidebar from "../../components/Slidebar";
 import { salesMenuItems } from "./Slidebar_sales";
-import { Search, Plus, Minus, Trash2, IndianRupee, CreditCard, Banknote } from "lucide-react";
+import { Eye } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import jsPDF from "jspdf";
 
 function Order_sales() {
-  const [cart, setCart] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const downloadInvoice = (order) => {
+    const doc = new jsPDF();
 
-  // Sample data for ice cream products
-  const products = [
-    { id: 1, name: "Vanilla Party Pack", price: 250, category: "Box", image: "https://placehold.co/60x60?text=Vanilla" },
-    { id: 2, name: "Chocolate Cone", price: 60, category: "Cone", image: "https://placehold.co/60x60?text=Choco" },
-    { id: 3, name: "Mango Delight", price: 120, category: "Cup", image: "https://placehold.co/60x60?text=Mango" },
-    { id: 4, name: "Strawberry Swirl", price: 45, category: "Stick", image: "https://placehold.co/60x60?text=Berry" },
-  ];
+    doc.setFontSize(18);
+    doc.text("ABC Ice Cream Distributors", 20, 20);
+    doc.setFontSize(12);
+    doc.text("123 Market Road, Mumbai", 20, 30);
+    doc.text("Phone: +91 9876543210", 20, 38);
 
-  const addToCart = (product) => {
-    setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.id === product.id);
-      if (existingItem) {
-        return prevCart.map((item) =>
-          item.id === product.id ? { ...item, qty: item.qty + 1 } : item
-        );
-      }
-      return [...prevCart, { ...product, qty: 1 }];
+    doc.line(20, 45, 190, 45);
+
+    doc.text(`Order ID: ${order.id}`, 20, 55);
+    doc.text(`Date: ${order.date}`, 20, 63);
+
+    doc.text("Customer:", 20, 75);
+    doc.text(order.customer.name, 20, 83);
+    doc.text(order.customer.mobile, 20, 91);
+    doc.text(order.customer.city, 20, 99);
+
+    doc.text("Salesman: " + order.salesman.name, 130, 83);
+
+    doc.line(20, 110, 190, 110);
+
+    let y = 120;
+
+    doc.text("Product", 20, y);
+    doc.text("Qty", 100, y);
+    doc.text("Price", 120, y);
+    doc.text("Total", 160, y);
+
+    y += 10;
+
+    order.items.forEach((item) => {
+      doc.text(item.name, 20, y);
+      doc.text(String(item.qty), 100, y);
+      doc.text("₹" + item.price, 120, y);
+      doc.text("₹" + item.price * item.qty, 160, y);
+      y += 10;
     });
+
+    doc.line(20, y, 190, y);
+    y += 10;
+
+    doc.setFontSize(14);
+    doc.text("Grand Total: ₹" + order.total, 140, y);
+
+    doc.save(`Invoice_Order_${order.id}.pdf`);
   };
 
-  const updateQty = (id, delta) => {
-    setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.id === id ? { ...item, qty: Math.max(1, item.qty + delta) } : item
-      )
-    );
-  };
+  const navigate = useNavigate();
 
-  const removeFromCart = (id) => {
-    setCart(cart.filter((item) => item.id !== id));
-  };
-
-  const subtotal = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
+  // ✅ Static Orders Data
+  const orders = [
+    {
+      id: 1,
+      customer: {
+        name: "Rahul Sharma",
+        mobile: "9876543210",
+        city: "Mumbai",
+      },
+      salesman: {
+        name: "Amit Verma",
+      },
+      date: "16 Feb 2026 | 10:30 AM",
+      total: 390,
+      items: [
+        { id: 1, name: "Classic Vanilla", qty: 2, price: 120 },
+        { id: 2, name: "Chocolate Deluxe", qty: 1, price: 150 },
+      ],
+    },
+    {
+      id: 2,
+      customer: {
+        name: "Priya Mehta",
+        mobile: "9123456780",
+        city: "Pune",
+      },
+      salesman: {
+        name: "Amit Verma",
+      },
+      date: "15 Feb 2026 | 04:15 PM",
+      total: 260,
+      items: [{ id: 3, name: "Strawberry Swirl", qty: 2, price: 130 }],
+    },
+  ];
 
   return (
     <Slidebar title="Sales Panel" menuItems={salesMenuItems}>
-      <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-120px)]">
-        
-        {/* Left Side: Product Selection */}
-        <div className="flex-1 flex flex-col gap-4 overflow-hidden">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-800">New Order</h1>
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
-              <input
-                type="text"
-                placeholder="Search products..."
-                className="w-full pl-10 pr-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-400 outline-none"
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
+      <div className="p-6 bg-gray-50 min-h-screen">
+        <h1 className="text-3xl font-bold mb-8 text-gray-800">All Orders</h1>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 overflow-y-auto pr-2">
-            {products.map((product) => (
-              <div
-                key={product.id}
-                onClick={() => addToCart(product)}
-                className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all cursor-pointer group"
-              >
-                <img src={product.image} alt={product.name} className="w-full h-32 object-cover rounded-xl mb-3" />
-                <h3 className="font-bold text-gray-800">{product.name}</h3>
-                <div className="flex justify-between items-center mt-2">
-                  <span className="text-blue-600 font-bold">₹{product.price}</span>
-                  <span className="text-[10px] bg-gray-100 px-2 py-1 rounded-md uppercase text-gray-500">{product.category}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Right Side: Billing Section */}
-        <div className="w-full lg:w-96 flex flex-col bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-          <div className="p-4 border-b bg-gray-50">
-            <h2 className="font-bold text-lg flex items-center gap-2">
-              <ShoppingBag size={20} className="text-blue-600" /> Current Order
-            </h2>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {cart.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-gray-400">
-                <p>No items added yet</p>
-              </div>
-            ) : (
-              cart.map((item) => (
-                <div key={item.id} className="flex items-center gap-3 bg-gray-50 p-3 rounded-xl">
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-gray-800 leading-tight">{item.name}</p>
-                    <p className="text-xs text-gray-500">₹{item.price} per unit</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => updateQty(item.id, -1)} className="p-1 hover:bg-gray-200 rounded"><Minus size={14} /></button>
-                    <span className="text-sm font-bold w-4 text-center">{item.qty}</span>
-                    <button onClick={() => updateQty(item.id, 1)} className="p-1 hover:bg-gray-200 rounded"><Plus size={14} /></button>
-                    <button onClick={() => removeFromCart(item.id)} className="ml-2 text-red-400 hover:text-red-600"><Trash2 size={16} /></button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          <div className="p-6 border-t bg-white">
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between text-gray-500">
-                <span>Subtotal</span>
-                <span>₹{subtotal}</span>
-              </div>
-              <div className="flex justify-between text-gray-500">
-                <span>Tax (GST 5%)</span>
-                <span>₹{(subtotal * 0.05).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-xl font-black text-gray-800 border-t pt-2">
-                <span>Total</span>
-                <span>₹{(subtotal * 1.05).toFixed(2)}</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <button className="flex items-center justify-center gap-2 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 font-medium text-sm">
-                <Banknote size={18} /> Cash
-              </button>
-              <button className="flex items-center justify-center gap-2 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 font-medium text-sm">
-                <CreditCard size={18} /> UPI/Card
-              </button>
-            </div>
-
-            <button 
-              disabled={cart.length === 0}
-              className="w-full mt-4 bg-blue-600 disabled:bg-gray-300 text-white py-4 rounded-2xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
+        <div className="grid gap-6">
+          {orders.map((order) => (
+            <div
+              key={order.id}
+              className="bg-white p-6 rounded-2xl shadow-md border border-gray-100 hover:shadow-lg transition"
             >
-              Print Receipt & Finish
-            </button>
-          </div>
+              {/* Top Section */}
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm font-semibold text-gray-400">
+                    Order ID: #{order.id}
+                  </p>
+
+                  <h2 className="text-lg font-semibold text-gray-800">
+                    {order.customer.name}
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    {order.customer.mobile}
+                  </p>
+                  <p className="text-sm text-gray-500">{order.customer.city}</p>
+                  <p className="text-sm text-gray-400 mt-1">{order.date}</p>
+                </div>
+
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-blue-600">
+                    ₹{order.total}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Salesman: {order.salesman.name}
+                  </p>
+                </div>
+              </div>
+
+              {/* Items List */}
+              <div className="mt-5 border-t pt-4">
+                <h3 className="text-sm font-semibold text-gray-600 mb-3">
+                  Order Items
+                </h3>
+
+                {order.items.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex justify-between text-sm text-gray-700 mb-2"
+                  >
+                    <span>
+                      {item.name} × {item.qty}
+                    </span>
+                    <span>₹{item.price * item.qty}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* View Button */}
+              <div className="flex justify-end gap-3 mt-5">
+                <button
+                  onClick={() => navigate(`/order-details/${order.id}`)}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition"
+                >
+                  <Eye size={16} />
+                  View Details
+                </button>
+
+                <button
+                  onClick={() => downloadInvoice(order)}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition"
+                >
+                  Download PDF
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </Slidebar>

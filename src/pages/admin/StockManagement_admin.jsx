@@ -1,15 +1,13 @@
 import React from "react";
 import Slidebar from "../../components/Slidebar";
-import { menuItems } from "./Slidebar_data";
+import { menuItems } from "./SLidebar_Data";
 import { Search, Plus, RotateCw, Box, AlertTriangle } from "lucide-react";
 
 const StockManagement_admin = () => {
   return (
     <Slidebar title="CoolStock Admin" menuItems={menuItems}>
       {/* Breadcrumb */}
-      <nav className="text-sm text-gray-500 mb-2">
-        Inventory / <span className="text-blue-500">Add / Update Stock</span>
-      </nav>
+     
 
       <h1 className="text-2xl font-bold text-gray-800 mb-1">Stock Management</h1>
       <p className="text-sm text-gray-500 mb-8">
