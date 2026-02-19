@@ -206,50 +206,79 @@ function Inventory_sales() {
 
         {/* Customer Form */}
         {cart.length > 0 && (
-          <div className="bg-white p-6 rounded-xl shadow border">
-            <h2 className="font-semibold mb-4">Customer Information</h2>
+          <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 max-w-4xl mx-auto">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
+              Customer Information
+            </h2>
 
-            <input
-              type="text"
-              placeholder="Customer Name"
-              className="border p-2 rounded-lg w-full mb-3"
-              onChange={(e) =>
-                setCustomer({ ...customer, name: e.target.value })
-              }
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Customer Name */}
+              <div className="flex flex-col">
+                <label className="text-sm font-medium text-gray-600 mb-2">
+                  Customer Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter full name"
+                  className="border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition p-3 rounded-xl outline-none"
+                  onChange={(e) =>
+                    setCustomer({ ...customer, name: e.target.value })
+                  }
+                />
+              </div>
 
-            <input
-              type="text"
-              placeholder="Mobile"
-              className="border p-2 rounded-lg w-full mb-3"
-              onChange={(e) =>
-                setCustomer({ ...customer, mobile: e.target.value })
-              }
-            />
+              {/* Mobile */}
+              <div className="flex flex-col">
+                <label className="text-sm font-medium text-gray-600 mb-2">
+                  Mobile Number
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter mobile number"
+                  className="border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition p-3 rounded-xl outline-none"
+                  onChange={(e) =>
+                    setCustomer({ ...customer, mobile: e.target.value })
+                  }
+                />
+              </div>
 
-            <input
-              type="text"
-              placeholder="City"
-              className="border p-2 rounded-lg w-full mb-3"
-              onChange={(e) =>
-                setCustomer({ ...customer, city: e.target.value })
-              }
-            />
+              {/* City */}
+              <div className="flex flex-col">
+                <label className="text-sm font-medium text-gray-600 mb-2">
+                  City
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter city"
+                  className="border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition p-3 rounded-xl outline-none"
+                  onChange={(e) =>
+                    setCustomer({ ...customer, city: e.target.value })
+                  }
+                />
+              </div>
 
-            <input
-              type="text"
-              placeholder="Address"
-              className="border p-2 rounded-lg w-full mb-3"
-              onChange={(e) =>
-                setCustomer({ ...customer, address: e.target.value })
-              }
-            />
+              {/* Address */}
+              <div className="flex flex-col md:col-span-2">
+                <label className="text-sm font-medium text-gray-600 mb-2">
+                  Address
+                </label>
+                <textarea
+                  rows="3"
+                  placeholder="Enter full address"
+                  className="border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition p-3 rounded-xl outline-none resize-none"
+                  onChange={(e) =>
+                    setCustomer({ ...customer, address: e.target.value })
+                  }
+                />
+              </div>
+            </div>
 
+            {/* Button */}
             <button
               onClick={generateBill}
-              className="mt-4 w-full bg-green-500 text-white py-3 rounded-lg font-semibold"
+              className="mt-8 w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-4 rounded-xl font-semibold text-lg shadow-md transition transform hover:scale-[1.02]"
             >
-              Generate Bill
+              Generate Bill & Place Order
             </button>
           </div>
         )}
