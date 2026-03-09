@@ -60,6 +60,6 @@ Follow these steps to set up the project locally:
 ## 👥 Project Team
 
 This project was developed by:
-*   **Rutvik Shiyal**
-*   **Yash Kacha**
-*   **Gracy Pandya**
+*   [**Rutvik Shiyal**](https://github.com/SYL-Rutvik)
+*   [**Yash Kacha**](https://github.com/YashKachaRK)
+*   [**Gracy Pandya**](https://github.com/PandyaGracy)
