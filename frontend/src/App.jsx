@@ -4,6 +4,10 @@ import Login from './pages/Login';
 import AdminLayout from './layouts/AdminLayout';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminProfile from './pages/admin/Profile';
+import ManageStock from './pages/admin/ManageStock';
+import RecentOrders from './pages/admin/RecentOrders';
+import ManageStaff from './pages/admin/ManageStaff';
+import ManageCustomers from './pages/admin/ManageCustomers';
 import ManagerLayout from './layouts/ManagerLayout';
 import ManagerDashboard from './pages/manager/Dashboard';
 import ManagerProfile from './pages/manager/Profile';
@@ -29,10 +33,10 @@ function App() {
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="profile" element={<AdminProfile />} />
-          <Route path="view_products" element={<div className="p-8">View Products</div>} />
-          <Route path="recent_orders" element={<div className="p-8">Recent Orders</div>} />
-          <Route path="view_employees" element={<div className="p-8">View Employees</div>} />
-          <Route path="view_customers" element={<div className="p-8">View Customers</div>} />
+          <Route path="manage_stock" element={<ManageStock />} />
+          <Route path="recent_orders" element={<RecentOrders />} />
+          <Route path="view_employees" element={<ManageStaff />} />
+          <Route path="view_customers" element={<ManageCustomers />} />
         </Route>
         
         {/* Manager routes */}

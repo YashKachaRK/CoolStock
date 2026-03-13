@@ -47,21 +47,21 @@ export default function CashierDashboard() {
   const formattedDate = time.toDateString();
 
   return (
-    <div className="p-8 w-full">
+    <div className="p-4 md:p-8 w-full">
       {/* Header */}
-      <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-7 rounded-2xl mb-8 flex justify-between items-center shadow-lg print:hidden">
+      <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-5 md:p-7 rounded-2xl mb-6 md:mb-8 flex justify-between items-center shadow-lg print:hidden">
         <div>
-          <h1 className="text-3xl font-black">💳 Cashier — Payment Verification</h1>
-          <p className="opacity-80 mt-1">Verify cash received from Delivery Boy & generate invoice</p>
+          <h1 className="text-xl md:text-3xl font-black">💳 Cashier — Payment Verification</h1>
+          <p className="opacity-80 mt-1 text-sm">Verify cash received from Delivery Boy &amp; generate invoice</p>
         </div>
-        <div className="text-right">
-          <div className="text-sm opacity-70">{formattedDate}</div>
-          <div className="text-2xl font-bold mt-1">{formattedTime}</div>
+        <div className="text-right shrink-0">
+          <div className="text-xs md:text-sm opacity-70 hidden sm:block">{formattedDate}</div>
+          <div className="text-lg md:text-2xl font-bold mt-1">{formattedTime}</div>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-6 mb-8 print:hidden">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8 print:hidden">
         <div className="bg-white p-6 rounded-2xl shadow hover:scale-105 transition">
           <p className="text-gray-400 text-sm">Pending Verifications</p>
           <p className="text-3xl font-black text-orange-500 mt-2">{pendingVerifications.length}</p>

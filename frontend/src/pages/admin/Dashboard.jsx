@@ -33,21 +33,21 @@ export default function Dashboard() {
   const formattedDate = time.toDateString();
 
   return (
-    <div className="p-8 w-full">
+    <div className="p-4 md:p-8 w-full">
       {/* Header */}
-      <div className="bg-gradient-to-r from-slate-800 to-gray-700 text-white p-7 rounded-2xl mb-8 flex justify-between items-center shadow-lg">
+      <div className="bg-gradient-to-r from-slate-800 to-gray-700 text-white p-5 md:p-7 rounded-2xl mb-6 md:mb-8 flex justify-between items-center shadow-lg">
         <div>
-          <h1 className="text-3xl font-black">⚙️ Admin Control Panel</h1>
-          <p className="opacity-80 mt-1">CoolStock — Ice Cream Wholesale System</p>
+          <h1 className="text-xl md:text-3xl font-black">⚙️ Admin Control Panel</h1>
+          <p className="opacity-80 mt-1 text-sm md:text-base">CoolStock — Ice Cream Wholesale System</p>
         </div>
         <div className="text-right">
-          <div className="text-sm opacity-70">{formattedDate}</div>
-          <div className="text-2xl font-bold mt-1">{formattedTime}</div>
+          <div className="text-xs md:text-sm opacity-70 hidden sm:block">{formattedDate}</div>
+          <div className="text-lg md:text-2xl font-bold mt-1">{formattedTime}</div>
         </div>
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
         <div className="bg-white p-6 rounded-2xl shadow hover:scale-105 transition cursor-pointer">
           <p className="text-gray-400 text-sm">Total Customers</p>
           <p className="text-3xl font-black text-slate-700 mt-2">24</p>
