@@ -1,16 +1,65 @@
-# React + Vite
+# CoolStock
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+CoolStock is a comprehensive inventory, order, and invoice management web application built specifically for the owner of the **coolproduct** company. It streamlines daily operations by providing a centralized platform for managing stock, tracking orders, generating invoices, and overseeing the sales team.
 
-Currently, two official plugins are available:
+## 🚀 Key Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+*   **Role-Based Access Control:** Secure authentication and authorization with distinct roles for Admin and Sales users.
+*   **Admin Dashboard:**
+    *   Overview of business metrics with interactive charts (using Chart.js).
+    *   Manage Products (Add, Update, Delete).
+    *   Manage Stock Updates.
+    *   Manage Salesmen (Users).
+    *   View and track all Orders.
+*   **Sales Dashboard:**
+    *   View available Inventory.
+    *   Create new Orders.
+    *   View Order Details.
+*   **Invoice Generation:** Automated PDF invoice generation for orders (powered by jsPDF).
+*   **Modern UI:** Responsive and modern user interface styled with Tailwind CSS.
 
-## React Compiler
+## 🛠️ Technology Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+*   **Frontend Library:** React (v19)
+*   **Build Tool:** Vite
+*   **Routing:** React Router DOM
+*   **Styling:** Tailwind CSS
+*   **Charts:** Chart.js & react-chartjs-2
+*   **PDF Generation:** jsPDF
+*   **Icons:** Lucide React
 
-## Expanding the ESLint configuration
+## 💻 Setup and Installation
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Follow these steps to set up the project locally:
+
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/YashKachaRK/CoolStock.git
+    cd CoolStock
+    ```
+
+2.  **Install dependencies:**
+    Make sure you have Node.js installed. Run the following command to install all required packages:
+    ```bash
+    npm install
+    ```
+
+3.  **Run the development server:**
+    Start the Vite development server:
+    ```bash
+    npm run dev
+    ```
+    The application will be accessible in your browser (usually at `http://localhost:5173`).
+
+4.  **Build for production:**
+    To create an optimized production build:
+    ```bash
+    npm run build
+    ```
+
+## 👥 Project Team
+
+This project was developed by:
+*   [**Rutvik Shiyal**](https://github.com/SYL-Rutvik)
+*   [**Yash Kacha**](https://github.com/YashKachaRK)
+*   [**Gracy Pandya**](https://github.com/PandyaGracy)
