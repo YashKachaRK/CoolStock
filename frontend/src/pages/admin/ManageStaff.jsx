@@ -79,11 +79,6 @@ export default function ManageStaff() {
     showToast("✅ Staff status updated.");
   };
 
-  const handleRemove = (id) => {
-    setStaff((prev) => prev.filter((s) => s.id !== id));
-    setViewStaff(null);
-    showToast("🗑️ Staff member removed.", "error");
-  };
   const handleAdd = async () => {
     if (!newStaff.name || !newStaff.username || !newStaff.email) {
       showToast("⚠️ Please fill all required fields!", "error");
@@ -154,6 +149,23 @@ export default function ManageStaff() {
     } catch (error) {
       console.log(error);
       showToast("❌ Error updating staff", "error");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete?");
+
+    if (!confirmDelete) return;
+
+    try {
+      await axios.delete(`http://localhost:5000/deleteStaff/${id}`);
+
+      setViewStaff(null)
+      showToast("🗑️ Staff deleted successfully!");
+      fetchStaff(); // reload table
+    } catch (error) {
+      console.log(error);
+      showToast("❌ Error deleting staff", "error");
     }
   };
   return (
@@ -301,7 +313,12 @@ export default function ManageStaff() {
                         >
                           ✏️ Edit
                         </button>
-
+                        <button
+                          onClick={() => handleDelete(s.id)}
+                          className="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-200 transition"
+                        >
+                          🗑 Delete
+                        </button>
                         <button
                           onClick={() => handleToggleStatus(s.id)}
                           className="bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-yellow-200 transition"
@@ -360,7 +377,7 @@ export default function ManageStaff() {
               ))}
               <div className="flex gap-3 pt-2">
                 <button
-                  onClick={() => handleRemove(viewStaff.id)}
+                  onClick={() => handleDelete(viewStaff.id)}
                   className="flex-1 py-3 bg-red-100 text-red-700 font-bold rounded-2xl hover:bg-red-200 transition text-sm"
                 >
                   🗑️ Remove Staff
@@ -511,65 +528,105 @@ export default function ManageStaff() {
           {toast.message}
         </div>
       )}
-{/* edit model */}
+      {/* edit model */}
       {editStaff && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-8">
-            <h2 className="text-xl font-bold mb-4">✏️ Edit Staff</h2>
+        <div
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setEditStaff(null);
+          }}
+        >
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden">
+            {/* HEADER */}
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 text-center">
+              <div className="text-4xl mb-2">✏️</div>
+              <h2 className="text-2xl font-black">Edit Staff</h2>
+              <p className="text-sm opacity-80 mt-1">
+                Update employee information
+              </p>
+            </div>
 
-            <input
-              value={editStaff.name}
-              onChange={(e) =>
-                setEditStaff({ ...editStaff, name: e.target.value })
-              }
-              className="w-full border mb-3 p-2 rounded"
-              placeholder="Name"
-            />
+            {/* BODY */}
+            <div className="p-6 space-y-4">
+              {/* Name */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                  Full Name
+                </label>
+                <input
+                  value={editStaff.name}
+                  onChange={(e) =>
+                    setEditStaff({ ...editStaff, name: e.target.value })
+                  }
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-blue-400 outline-none text-sm"
+                  placeholder="Enter full name"
+                />
+              </div>
 
-            <input
-              value={editStaff.email}
-              onChange={(e) =>
-                setEditStaff({ ...editStaff, email: e.target.value })
-              }
-              className="w-full border mb-3 p-2 rounded"
-              placeholder="Email"
-            />
+              {/* Email */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                  Email
+                </label>
+                <input
+                  value={editStaff.email}
+                  onChange={(e) =>
+                    setEditStaff({ ...editStaff, email: e.target.value })
+                  }
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-blue-400 outline-none text-sm"
+                  placeholder="Enter email"
+                />
+              </div>
 
-            <input
-              value={editStaff.phone}
-              onChange={(e) =>
-                setEditStaff({ ...editStaff, phone: e.target.value })
-              }
-              className="w-full border mb-3 p-2 rounded"
-              placeholder="Phone"
-            />
+              {/* Phone */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                  Phone
+                </label>
+                <input
+                  value={editStaff.phone}
+                  onChange={(e) =>
+                    setEditStaff({ ...editStaff, phone: e.target.value })
+                  }
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-blue-400 outline-none text-sm"
+                  placeholder="Enter phone number"
+                />
+              </div>
 
-            <select
-              value={editStaff.role}
-              onChange={(e) =>
-                setEditStaff({ ...editStaff, role: e.target.value })
-              }
-              className="w-full border mb-4 p-2 rounded"
-            >
-              <option>Manager</option>
-              <option>Delivery</option>
-              <option>Cashier</option>
-            </select>
+              {/* Role */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                  Role
+                </label>
+                <select
+                  value={editStaff.role}
+                  onChange={(e) =>
+                    setEditStaff({ ...editStaff, role: e.target.value })
+                  }
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-blue-400 outline-none text-sm bg-white"
+                >
+                  <option>Manager</option>
+                  <option>Delivery</option>
+                  <option>Cashier</option>
+                </select>
+              </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={handleUpdate}
-                className="flex-1 bg-blue-600 text-white py-2 rounded"
-              >
-                Update
-              </button>
+              {/* BUTTONS */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handleUpdate}
+                  className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold rounded-2xl hover:opacity-90 transition shadow-lg"
+                >
+                  💾 Update Staff
+                </button>
 
-              <button
-                onClick={() => setEditStaff(null)}
-                className="flex-1 bg-gray-200 py-2 rounded"
-              >
-                Cancel
-              </button>
+                <button
+                  onClick={() => setEditStaff(null)}
+                  className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>
