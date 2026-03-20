@@ -68,15 +68,21 @@ export default function ManageStaff() {
     return matchRole && matchSearch;
   });
 
-  const handleToggleStatus = (id) => {
-    setStaff((prev) =>
-      prev.map((s) =>
-        s.id === id
-          ? { ...s, status: s.status === "Active" ? "Inactive" : "Active" }
-          : s,
-      ),
-    );
-    showToast("✅ Staff status updated.");
+  const handleToggleStatus = async (id, currentStatus) => {
+    const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
+
+    try {
+      await axios.put(`http://localhost:5000/updateStatus/${id}`, {
+        status: newStatus,
+      });
+
+      showToast("✅ Status updated");
+
+      fetchStaff(); // reload from DB
+    } catch (error) {
+      console.log(error);
+      showToast("❌ Error updating status", "error");
+    }
   };
 
   const handleAdd = async () => {
@@ -160,7 +166,7 @@ export default function ManageStaff() {
     try {
       await axios.delete(`http://localhost:5000/deleteStaff/${id}`);
 
-      setViewStaff(null)
+      setViewStaff(null);
       showToast("🗑️ Staff deleted successfully!");
       fetchStaff(); // reload table
     } catch (error) {
@@ -320,7 +326,7 @@ export default function ManageStaff() {
                           🗑 Delete
                         </button>
                         <button
-                          onClick={() => handleToggleStatus(s.id)}
+                          onClick={() => handleToggleStatus(s.id , s.status)}
                           className="bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-yellow-200 transition"
                         >
                           {s.status === "Active" ? "⏸" : "▶️"}

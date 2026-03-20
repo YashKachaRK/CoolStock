@@ -68,3 +68,20 @@ exports.deleteStaff = (req, res) => {
     res.send("delete");
   });
 };
+
+
+exports.updateStatus = (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  const sql = "UPDATE staff SET status=? WHERE id=?";
+
+  db.query(sql, [status, id], (err, result) => {
+    if (err) {
+      console.log(err);
+      return res.status(500).send("Error updating status");
+    }
+
+    res.send("Status updated");
+  });
+};
