@@ -14,6 +14,7 @@ export default function ManageStaff() {
   const [search, setSearch] = useState("");
   const [viewStaff, setViewStaff] = useState(null);
   const [addModal, setAddModal] = useState(false);
+  const [editStaff, setEditStaff] = useState(null);
   const [newStaff, setNewStaff] = useState({
     name: "",
     role: "Manager",
@@ -135,6 +136,26 @@ export default function ManageStaff() {
   }, {});
   const activeCount = staff.filter((s) => s.status === "Active").length;
 
+  // edit
+  const handleEditClick = (staff) => {
+    setEditStaff(staff);
+  };
+
+  const handleUpdate = async () => {
+    try {
+      await axios.put(
+        `http://localhost:5000/updateStaff/${editStaff.id}`,
+        editStaff,
+      );
+
+      showToast("✏️ Staff updated successfully!");
+      setEditStaff(null);
+      fetchStaff(); // refresh table
+    } catch (error) {
+      console.log(error);
+      showToast("❌ Error updating staff", "error");
+    }
+  };
   return (
     <div className="p-4 md:p-8 w-full">
       {/* Header */}
@@ -274,6 +295,13 @@ export default function ManageStaff() {
                         >
                           👁 View
                         </button>
+                        <button
+                          onClick={() => handleEditClick(s)}
+                          className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-200 transition"
+                        >
+                          ✏️ Edit
+                        </button>
+
                         <button
                           onClick={() => handleToggleStatus(s.id)}
                           className="bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-yellow-200 transition"
@@ -481,6 +509,69 @@ export default function ManageStaff() {
           className={`fixed bottom-6 right-6 text-white px-6 py-3 rounded-2xl shadow-2xl font-semibold z-50 ${toast.type === "error" ? "bg-red-500" : "bg-green-500"}`}
         >
           {toast.message}
+        </div>
+      )}
+{/* edit model */}
+      {editStaff && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-8">
+            <h2 className="text-xl font-bold mb-4">✏️ Edit Staff</h2>
+
+            <input
+              value={editStaff.name}
+              onChange={(e) =>
+                setEditStaff({ ...editStaff, name: e.target.value })
+              }
+              className="w-full border mb-3 p-2 rounded"
+              placeholder="Name"
+            />
+
+            <input
+              value={editStaff.email}
+              onChange={(e) =>
+                setEditStaff({ ...editStaff, email: e.target.value })
+              }
+              className="w-full border mb-3 p-2 rounded"
+              placeholder="Email"
+            />
+
+            <input
+              value={editStaff.phone}
+              onChange={(e) =>
+                setEditStaff({ ...editStaff, phone: e.target.value })
+              }
+              className="w-full border mb-3 p-2 rounded"
+              placeholder="Phone"
+            />
+
+            <select
+              value={editStaff.role}
+              onChange={(e) =>
+                setEditStaff({ ...editStaff, role: e.target.value })
+              }
+              className="w-full border mb-4 p-2 rounded"
+            >
+              <option>Manager</option>
+              <option>Delivery</option>
+              <option>Cashier</option>
+            </select>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleUpdate}
+                className="flex-1 bg-blue-600 text-white py-2 rounded"
+              >
+                Update
+              </button>
+
+              <button
+                onClick={() => setEditStaff(null)}
+                className="flex-1 bg-gray-200 py-2 rounded"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

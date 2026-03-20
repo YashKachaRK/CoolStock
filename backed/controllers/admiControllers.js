@@ -49,3 +49,19 @@ exports.staff = (req, res) => {
     res.json(result);
   });
 };
+
+exports.updateStaff = (req, res) => {
+  const { id } = req.params;
+  const { name, role, email, phone } = req.body;
+
+  const sql = `
+    UPDATE staff 
+    SET name=?, role=?, email=?, phone=? 
+    WHERE id=?
+  `;
+
+  db.query(sql, [name, role, email, phone, id], (err, result) => {
+    if (err) return res.status(500).send(err);
+    res.send("Updated Successfully");
+  });
+};
