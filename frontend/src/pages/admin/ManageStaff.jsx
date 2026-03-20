@@ -380,7 +380,7 @@ export default function ManageStaff() {
                   onClick={() => handleDelete(viewStaff.id)}
                   className="flex-1 py-3 bg-red-100 text-red-700 font-bold rounded-2xl hover:bg-red-200 transition text-sm"
                 >
-                  🗑️ Remove Staff
+                  🗑️ Delete Staff
                 </button>
                 <button
                   onClick={() => setViewStaff(null)}
