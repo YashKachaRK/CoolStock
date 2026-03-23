@@ -1,14 +1,14 @@
 import { useState } from 'react';
 
 const INITIAL_PRODUCTS = [
-  { id: 1, name: 'Chocolate Cone',   icon: '🍫', category: 'Cone',   unit: 'Carton (12 cones)',    price: 720,  stock: 45, lowThreshold: 20 },
-  { id: 2, name: 'Vanilla Cone',     icon: '🍦', category: 'Cone',   unit: 'Carton (12 cones)',    price: 660,  stock: 8,  lowThreshold: 20 },
-  { id: 3, name: 'Strawberry Cup',   icon: '🍓', category: 'Cup',    unit: 'Carton (24 cups)',     price: 600,  stock: 32, lowThreshold: 15 },
-  { id: 4, name: 'Mango Shake',      icon: '🥭', category: 'Shake',  unit: 'Carton (12 bottles)',  price: 960,  stock: 5,  lowThreshold: 15 },
-  { id: 5, name: 'Family Pack',      icon: '📦', category: 'Pack',   unit: 'Case (12 packs)',      price: 2640, stock: 18, lowThreshold: 10 },
-  { id: 6, name: 'Butterscotch Cup', icon: '🧈', category: 'Cup',    unit: 'Carton (24 cups)',     price: 660,  stock: 6,  lowThreshold: 15 },
-  { id: 7, name: 'Kesar Mango Bar',  icon: '🟡', category: 'Bar',    unit: 'Carton (24 bars)',     price: 480,  stock: 22, lowThreshold: 10 },
-  { id: 8, name: 'Choco Bar',        icon: '🍫', category: 'Bar',    unit: 'Carton (24 bars)',     price: 540,  stock: 3,  lowThreshold: 10 },
+  { id: 1, name: 'Chocolate Cone',    category: 'Cone',   unit: 'Carton (12 cones)',    price: 720,  stock: 45, lowThreshold: 20 },
+  { id: 2, name: 'Vanilla Cone',      category: 'Cone',   unit: 'Carton (12 cones)',    price: 660,  stock: 8,  lowThreshold: 20 },
+  { id: 3, name: 'Strawberry Cup',    category: 'Cup',    unit: 'Carton (24 cups)',     price: 600,  stock: 32, lowThreshold: 15 },
+  { id: 4, name: 'Mango Shake',       category: 'Shake',  unit: 'Carton (12 bottles)',  price: 960,  stock: 5,  lowThreshold: 15 },
+  { id: 5, name: 'Family Pack',       category: 'Pack',   unit: 'Case (12 packs)',      price: 2640, stock: 18, lowThreshold: 10 },
+  { id: 6, name: 'Butterscotch Cup',  category: 'Cup',    unit: 'Carton (24 cups)',     price: 660,  stock: 6,  lowThreshold: 15 },
+  { id: 7, name: 'Kesar Mango Bar',   category: 'Bar',    unit: 'Carton (24 bars)',     price: 480,  stock: 22, lowThreshold: 10 },
+  { id: 8, name: 'Choco Bar',         category: 'Bar',    unit: 'Carton (24 bars)',     price: 540,  stock: 3,  lowThreshold: 10 },
 ];
 
 const CATEGORIES = ['All', 'Cone', 'Cup', 'Shake', 'Pack', 'Bar'];
@@ -20,7 +20,7 @@ export default function ManageStock() {
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'low'
   const [editModal, setEditModal] = useState(null);   // product being edited
   const [addModal, setAddModal] = useState(false);
-  const [newProduct, setNewProduct] = useState({ name: '', icon: '🍦', category: 'Cone', unit: '', price: '', stock: '', lowThreshold: 10 });
+  const [newProduct, setNewProduct] = useState({ name: '',  category: 'Cone', unit: '', price: '', stock: '', lowThreshold: 10 });
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   const showToast = (message, type = 'success') => {
@@ -59,7 +59,7 @@ export default function ManageStock() {
     const id = Math.max(...products.map(p => p.id)) + 1;
     setProducts(prev => [...prev, { ...newProduct, id, price: Number(newProduct.price), stock: Number(newProduct.stock), lowThreshold: Number(newProduct.lowThreshold) }]);
     setAddModal(false);
-    setNewProduct({ name: '', icon: '🍦', category: 'Cone', unit: '', price: '', stock: '', lowThreshold: 10 });
+    setNewProduct({ name: '',  category: 'Cone', unit: '', price: '', stock: '', lowThreshold: 10 });
     showToast('🎉 New product added!', 'success');
   };
 
@@ -127,7 +127,7 @@ export default function ManageStock() {
           <div className="flex-1">
             <p className="font-bold text-red-700 text-lg">Low Stock Alert!</p>
             <p className="text-red-500 text-sm mt-0.5">
-              {lowStockProducts.map(p => `${p.icon} ${p.name} (${p.stock} left)`).join(' · ')}
+              {lowStockProducts.map(p => `${p.name} (${p.stock} left)`).join(' · ')}
             </p>
           </div>
           <button
@@ -223,7 +223,7 @@ export default function ManageStock() {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={e => { if (e.target === e.currentTarget) setEditModal(null); }}>
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-8">
             <div className="flex items-center gap-3 mb-6">
-              <span className="text-4xl">{editModal.icon}</span>
+              
               <div>
                 <h2 className="text-2xl font-black text-gray-800">Edit Product</h2>
                 <p className="text-gray-400 text-sm">Update product details and stock level</p>
@@ -236,11 +236,7 @@ export default function ManageStock() {
                   <input value={editModal.name} onChange={e => setEditModal({ ...editModal, name: e.target.value })}
                     className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-indigo-400 outline-none text-sm" />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Icon (emoji)</label>
-                  <input value={editModal.icon} onChange={e => setEditModal({ ...editModal, icon: e.target.value })}
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-indigo-400 outline-none text-sm" />
-                </div>
+              
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -282,17 +278,13 @@ export default function ManageStock() {
               <p className="text-gray-400 text-sm mt-1">Fill in the product details to add it to the catalogue</p>
             </div>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Product Name *</label>
                   <input placeholder="e.g. Pista Kulfi" value={newProduct.name} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })}
                     className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-indigo-400 outline-none text-sm" />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Icon (emoji)</label>
-                  <input placeholder="🍦" value={newProduct.icon} onChange={e => setNewProduct({ ...newProduct, icon: e.target.value })}
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-indigo-400 outline-none text-sm" />
-                </div>
+               
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -358,7 +350,7 @@ function ProductRow({ product, stockBadge, onEdit, onRestock }) {
     <tr className={`hover:bg-gray-50 transition ${isLow ? 'bg-red-50' : ''}`}>
       <td className="py-4 px-6">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">{product.icon}</span>
+         
           <span className="font-bold text-gray-800">{product.name}</span>
         </div>
       </td>
