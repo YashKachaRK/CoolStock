@@ -1,23 +1,56 @@
 import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
+const API_PROXY = "http://localhost:5000";
+
+const DEFAULT_ORDERS = [
+  { id: '301', customer: 'Ramesh General Store', location: 'Village Khari, Dist. Anand', items: 'Chocolate Cone × 5 cartons, Vanilla Cone × 3 cartons', total: '₹7,560', placed: '10 Mar 2026, 10:30 AM', status: 'Pending', deliveryBoy: null },
+  { id: '302', customer: 'Patel Kirana Shop', location: 'Nadiad, Kheda', items: 'Mango Shake × 10 cartons, Family Pack × 2 cases', total: '₹14,880', placed: '10 Mar 2026, 11:15 AM', status: 'Pending', deliveryBoy: null },
+  { id: '303', customer: 'Sharma Cold Store', location: 'Anklav, Anand', items: 'Strawberry Cup × 8 cartons, Butterscotch Cup × 6 cartons', total: '₹8,760', placed: '10 Mar 2026, 12:00 PM', status: 'Pending', deliveryBoy: null },
+  { id: '304', customer: 'Kumar Sweets & Stores', location: 'Borsad, Anand', items: 'Chocolate Cone × 12 cartons, Mango Shake × 5 cartons', total: '₹13,440', placed: '10 Mar 2026, 1:00 PM', status: 'Pending', deliveryBoy: null }
+];
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [time, setTime] = useState(new Date());
-  const [pendingOrders, setPendingOrders] = useState([
-    { id: '301', customer: 'Ramesh General Store', location: 'Village Khari, Dist. Anand', items: 'Chocolate Cone × 5 cartons, Vanilla Cone × 3 cartons', total: '₹7,560', placed: '10 Mar 2026, 10:30 AM' },
-    { id: '302', customer: 'Patel Kirana Shop', location: 'Nadiad, Kheda', items: 'Mango Shake × 10 cartons, Family Pack × 2 cases', total: '₹14,880', placed: '10 Mar 2026, 11:15 AM' },
-    { id: '303', customer: 'Sharma Cold Store', location: 'Anklav, Anand', items: 'Strawberry Cup × 8 cartons, Butterscotch Cup × 6 cartons', total: '₹8,760', placed: '10 Mar 2026, 12:00 PM' },
-    { id: '304', customer: 'Kumar Sweets & Stores', location: 'Borsad, Anand', items: 'Chocolate Cone × 12 cartons, Mango Shake × 5 cartons', total: '₹13,440', placed: '10 Mar 2026, 1:00 PM' }
-  ]);
-  
-  const [assignedOrders, setAssignedOrders] = useState([
-    { id: '298', customer: 'Mehta Traders', total: '₹9,200', deliveryBoy: 'Neha Singh', status: 'In Transit' },
-    { id: '299', customer: 'Joshi Provisions', total: '₹5,760', deliveryBoy: 'Rohit Das', status: 'Picked Up' }
-  ]);
-  
   const [toast, setToast] = useState({ show: false, message: '' });
 
+  // Live Stats State
+  const [totalProductsCount, setTotalProductsCount] = useState(0);
+  const [lowStockCount, setLowStockCount] = useState(0);
+  const [deliveryStaff, setDeliveryStaff] = useState([]);
+
+  // Orders State (Bridged via LocalStorage)
+  const [orders, setOrders] = useState([]);
+
+  // Bootup: Clocks, Axios fetches, LocalStorage Hydration
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
+
+    // Fetch Products
+    axios.get(`${API_PROXY}/products`).then(res => {
+      setTotalProductsCount(res.data.length);
+      const lowStock = res.data.filter(p => p.stock <= p.lowThreshold);
+      setLowStockCount(lowStock.length);
+    }).catch(err => console.error("Error fetching products:", err));
+
+    // Fetch Delivery Staff
+    axios.get(`${API_PROXY}/staff`).then(res => {
+      const dbStaff = res.data || [];
+      const dbDeliveryBoys = dbStaff.filter(s => s.role === 'Delivery');
+      setDeliveryStaff(dbDeliveryBoys);
+    }).catch(err => console.error("Error fetching staff:", err));
+
+    // Hydrate Orders Array
+    const savedOrders = localStorage.getItem('coolstock_orders');
+    if (!savedOrders) {
+      localStorage.setItem('coolstock_orders', JSON.stringify(DEFAULT_ORDERS));
+      setOrders(DEFAULT_ORDERS);
+    } else {
+      setOrders(JSON.parse(savedOrders));
+    }
+
     return () => clearInterval(timer);
   }, []);
 
@@ -26,26 +59,31 @@ export default function Dashboard() {
     setTimeout(() => setToast({ show: false, message: '' }), 3500);
   };
 
-  const handleAssign = (orderId, deliveryBoy) => {
-    if (!deliveryBoy) {
+  const handleAssign = (orderId, deliveryBoyStr) => {
+    if (!deliveryBoyStr) {
       alert('Please select a Delivery Boy first!');
       return;
     }
     
-    // Move order to assigned
-    const orderToAssign = pendingOrders.find(o => o.id === orderId);
-    setPendingOrders(pendingOrders.filter(o => o.id !== orderId));
+    // Update matching order
+    const updatedOrders = orders.map(o => {
+      if (o.id === orderId) {
+        return { ...o, status: 'Assigned', deliveryBoy: deliveryBoyStr };
+      }
+      return o;
+    });
+
+    setOrders(updatedOrders);
+    localStorage.setItem('coolstock_orders', JSON.stringify(updatedOrders));
     
-    setAssignedOrders([
-      { id: orderId, customer: '—', total: '—', deliveryBoy, status: 'Assigned ✓' },
-      ...assignedOrders
-    ]);
-    
-    showToast(`📌 #ORD-${orderId} assigned to ${deliveryBoy}!`);
+    showToast(`📌 #ORD-${orderId} assigned to ${deliveryBoyStr}!`);
   };
 
   const formattedTime = time.toLocaleTimeString('en-US', { hour12: false });
   const formattedDate = time.toDateString();
+
+  const pendingOrders = orders.filter(o => o.status === 'Pending');
+  const assignedOrders = orders.filter(o => o.status !== 'Pending');
 
   return (
     <div className="p-4 md:p-8 w-full">
@@ -64,23 +102,27 @@ export default function Dashboard() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
         <div className="bg-white p-6 rounded-2xl shadow hover:scale-105 transition cursor-pointer">
-          <p className="text-gray-400 text-sm">New Orders</p>
+          <p className="text-gray-400 text-sm">Total Products</p>
+          <p className="text-3xl font-black text-indigo-600 mt-2">{totalProductsCount}</p>
+          <p className="text-indigo-400 text-xs mt-1">Live from database</p>
+        </div>
+        <div 
+          onClick={() => navigate('/manager/view_products')} 
+          className="bg-red-50 p-6 rounded-2xl shadow border border-red-200 hover:scale-105 transition cursor-pointer"
+        >
+          <p className="text-gray-400 text-sm font-semibold">Low Stock Products</p>
+          <p className="text-3xl font-black text-red-600 mt-2">{lowStockCount}</p>
+          <p className="text-red-500 font-bold text-xs mt-1 underline">Click to view &rarr;</p>
+        </div>
+        <div className="bg-white p-6 rounded-2xl shadow hover:scale-105 transition cursor-pointer">
+          <p className="text-gray-400 text-sm">Pending Orders</p>
           <p className="text-3xl font-black text-orange-500 mt-2">{pendingOrders.length}</p>
           <p className="text-orange-400 text-xs mt-1">Not yet assigned</p>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow hover:scale-105 transition cursor-pointer">
-          <p className="text-gray-400 text-sm">Assigned</p>
+          <p className="text-gray-400 text-sm">Dispatched Orders</p>
           <p className="text-3xl font-black text-blue-600 mt-2">{assignedOrders.length}</p>
-          <p className="text-blue-400 text-xs mt-1">Delivery in progress</p>
-        </div>
-        <div className="bg-white p-6 rounded-2xl shadow hover:scale-105 transition cursor-pointer">
-          <p className="text-gray-400 text-sm">Delivered Today</p>
-          <p className="text-3xl font-black text-green-600 mt-2">5</p>
-          <p className="text-green-400 text-xs mt-1">Cash collection pending</p>
-        </div>
-        <div className="bg-white p-6 rounded-2xl shadow hover:scale-105 transition cursor-pointer">
-          <p className="text-gray-400 text-sm">Total Orders Today</p>
-          <p className="text-3xl font-black text-indigo-600 mt-2">12</p>
+          <p className="text-blue-400 text-xs mt-1">Status assigned/transit</p>
         </div>
       </div>
 
@@ -97,7 +139,7 @@ export default function Dashboard() {
         </div>
         <div className="p-6 space-y-4">
           {pendingOrders.map(order => (
-            <OrderItem key={order.id} order={order} onAssign={handleAssign} />
+            <OrderItem key={order.id} order={order} deliveryStaff={deliveryStaff} onAssign={handleAssign} />
           ))}
 
           {pendingOrders.length === 0 && (
@@ -111,8 +153,14 @@ export default function Dashboard() {
 
       {/* ONGOING ASSIGNED ORDERS */}
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        <div className="p-6 border-b">
+        <div className="p-6 border-b flex justify-between items-center">
           <h2 className="text-xl font-bold text-gray-800">🛵 Ongoing Assigned Orders</h2>
+          <button 
+            className="text-indigo-600 text-sm font-bold bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100 hover:bg-indigo-100 transition"
+            onClick={() => setOrders(JSON.parse(localStorage.getItem('coolstock_orders')))}
+          >
+            ↻ Refresh State
+          </button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -125,18 +173,21 @@ export default function Dashboard() {
                 <th className="px-6 text-left">Status</th>
               </tr>
             </thead>
-            <tbody className="text-gray-700">
+            <tbody className="text-gray-700 divide-y divide-gray-100">
+              {assignedOrders.length === 0 ? (
+                 <tr><td colSpan="5" className="text-center py-6 text-gray-400 font-semibold text-xs">No assigned orders yet.</td></tr>
+              ) : ''}
               {assignedOrders.map((order, idx) => (
-                <tr key={idx} className={`border-b hover:bg-gray-50 ${order.status === 'Assigned ✓' ? 'bg-green-50' : ''}`}>
+                <tr key={idx} className={`hover:bg-gray-50 ${order.status === 'Assigned' ? 'bg-green-50/50' : ''}`}>
                   <td className="py-3 px-6 font-bold">#ORD-{order.id}</td>
                   <td className="px-6">{order.customer}</td>
                   <td className="px-6 font-semibold text-indigo-600">{order.total}</td>
-                  <td className="px-6">🛵 {order.deliveryBoy}</td>
-                  <td className="px-6">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                  <td className="px-6 font-medium">🛵 {order.deliveryBoy || "—"}</td>
+                  <td className="px-6 py-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${
                       order.status === 'In Transit' ? 'bg-blue-100 text-blue-700' :
-                      order.status === 'Picked Up' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-blue-100 text-blue-700'
+                      order.status === 'Delivered' ? 'bg-green-100 text-green-700 border border-green-200' :
+                      'bg-orange-100 text-orange-700'
                     }`}>
                       {order.status}
                     </span>
@@ -158,12 +209,12 @@ export default function Dashboard() {
   );
 }
 
-function OrderItem({ order, onAssign }) {
+function OrderItem({ order, deliveryStaff, onAssign }) {
   const [selectedDeliveryBoy, setSelectedDeliveryBoy] = useState('');
 
   return (
-    <div className="border-2 border-orange-100 rounded-2xl p-5 hover:border-orange-300 transition">
-      <div className="flex justify-between items-start gap-4">
+    <div className="border-2 border-orange-100 rounded-2xl p-5 hover:border-orange-300 transition bg-white">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="font-black text-gray-800 text-lg">#ORD-{order.id}</span>
@@ -174,20 +225,27 @@ function OrderItem({ order, onAssign }) {
           <p className="text-sm text-indigo-600 font-semibold mt-1">💰 Total: {order.total}</p>
           <p className="text-xs text-gray-400 mt-1">📅 Placed: {order.placed}</p>
         </div>
-        <div className="flex flex-col gap-2 min-w-[200px]">
+        <div className="flex flex-col gap-2 w-full sm:min-w-[220px]">
           <select 
             value={selectedDeliveryBoy}
             onChange={(e) => setSelectedDeliveryBoy(e.target.value)}
-            className="border-2 border-gray-200 p-2 rounded-xl text-sm focus:border-indigo-400 outline-none"
+            className="border-2 border-gray-200 p-2 rounded-xl text-sm focus:border-indigo-400 outline-none w-full bg-white text-gray-700"
           >
             <option value="">— Select Delivery Boy —</option>
-            <option value="Neha Singh">🛵 Neha Singh</option>
-            <option value="Rohit Das">🛵 Rohit Das</option>
-            <option value="Arjun Mehta">🛵 Arjun Mehta</option>
+            {deliveryStaff.length > 0 ? (
+               deliveryStaff.map(s => <option key={s.id} value={s.name}>🛵 {s.name}</option>)
+            ) : (
+               // Dynamic fallback if database is empty/unreachable
+               <>
+                 <option value="Neha Singh">🛵 Neha Singh (Static)</option>
+                 <option value="Rohit Das">🛵 Rohit Das (Static)</option>
+                 <option value="Arjun Mehta">🛵 Arjun Mehta (Static)</option>
+               </>
+            )}
           </select>
           <button 
             onClick={() => onAssign(order.id, selectedDeliveryBoy)}
-            className="bg-indigo-600 text-white py-2 rounded-xl font-bold text-sm hover:bg-indigo-700 transition"
+            className="bg-indigo-600 text-white py-2 px-4 rounded-xl font-bold text-sm hover:bg-indigo-700 transition shadow"
           >
             📌 Assign Order
           </button>

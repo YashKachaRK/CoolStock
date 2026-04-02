@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const CATEGORIES = ["All", "Cone", "Cup", "Shake", "Pack", "Bar"];
 
-export default function ManageStock() {
+export default function Inventory() {
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [activeTab, setActiveTab] = useState("all"); // 'all' | 'low'
+  const [currentPage, setCurrentPage] = useState(1);
   const [editModal, setEditModal] = useState(null); // product being edited
   const [addModal, setAddModal] = useState(false);
   const [newProduct, setNewProduct] = useState({
@@ -54,7 +57,14 @@ export default function ManageStock() {
       activeCategory === "All" || p.category === activeCategory;
     const matchesTab = activeTab === "all" || p.stock <= p.lowThreshold;
     return matchesSearch && matchesCategory && matchesTab;
-  });
+  }).sort((a, b) => a.name.localeCompare(b.name));
+
+  const totalPages = Math.ceil(filteredProducts.length / 50);
+  const paginatedProducts = filteredProducts.slice((currentPage - 1) * 50, currentPage * 50);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, activeCategory, activeTab]);
 
   // ✅ RESTOCK
   const handleRestock = async (id, qty) => {
@@ -136,6 +146,7 @@ export default function ManageStock() {
       showToast("❌ Delete failed", "error");
     }
   };
+  
   const stockBadge = (stock, threshold) => {
     if (stock <= threshold) {
       return (
@@ -158,27 +169,99 @@ export default function ManageStock() {
     );
   };
 
+  const downloadCSV = () => {
+    const headers = ["ID", "Name", "Category", "Unit", "Price", "Stock", "Low Threshold"];
+    const csvRows = [];
+    csvRows.push(headers.join(','));
+    
+    for (const p of filteredProducts) {
+      const row = [p.id, `"${p.name}"`, `"${p.category}"`, `"${p.unit}"`, p.price, p.stock, p.lowThreshold];
+      csvRows.push(row.join(','));
+    }
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "inventory_data.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const downloadPDF = () => {
+    const doc = new jsPDF();
+    doc.text("CoolStock - Inventory Data", 14, 15);
+    const tableColumn = ["ID", "Name", "Category", "Price", "Stock", "Status"];
+    const tableRows = [];
+
+    // Track which rows are low stock to style them later
+    const lowStockRowIndexes = new Set();
+
+    filteredProducts.forEach((p, index) => {
+      const isLow = p.stock <= p.lowThreshold;
+      if (isLow) lowStockRowIndexes.add(index);
+      
+      const status = isLow ? "Low Stock" : "In Stock";
+      const pData = [p.id, p.name, p.category, `Rs. ${p.price}`, p.stock, status];
+      tableRows.push(pData);
+    });
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 20,
+      didParseCell: (data) => {
+        // Apply red and bold to low stock rows
+        if (data.section === 'body' && lowStockRowIndexes.has(data.row.index)) {
+          data.cell.styles.textColor = [220, 38, 38]; // Red
+          data.cell.styles.fontStyle = 'bold';
+        }
+      }
+    });
+    
+    doc.save("inventory_data.pdf");
+  };
+
   return (
     <div className="p-4 md:p-8 w-full">
       {/* Header */}
       <div className="bg-gradient-to-r from-slate-800 to-indigo-700 text-white p-5 md:p-7 rounded-2xl mb-6 md:mb-8 flex justify-between items-center shadow-lg">
         <div>
-          <h1 className="text-xl md:text-3xl font-black">📦 Manage Stock</h1>
+          <h1 className="text-xl md:text-3xl font-black">📦 Inventory Management</h1>
           <p className="opacity-80 mt-1 text-sm">
             Monitor inventory, restock products, and manage the full catalogue
           </p>
         </div>
-        <button
-          onClick={() => setAddModal(true)}
-          className="bg-white text-slate-800 font-bold px-3 md:px-5 py-2 md:py-2.5 rounded-xl hover:bg-gray-100 transition shadow text-xs md:text-sm shrink-0"
-        >
-          ➕ Add
-        </button>
+        <div className="flex flex-wrap gap-2 justify-end">
+          <button
+            onClick={downloadCSV}
+            className="bg-white/20 hover:bg-white/30 text-white font-bold px-3 py-2 md:py-2.5 rounded-xl transition shadow text-xs md:text-sm flex items-center gap-1"
+          >
+            📊 CSV
+          </button>
+          <button
+            onClick={downloadPDF}
+            className="bg-white/20 hover:bg-white/30 text-white font-bold px-3 py-2 md:py-2.5 rounded-xl transition shadow text-xs md:text-sm flex items-center gap-1"
+          >
+            📄 PDF
+          </button>
+          <button
+            onClick={() => setAddModal(true)}
+            className="bg-white text-slate-800 font-bold px-3 md:px-5 py-2 md:py-2.5 rounded-xl hover:bg-gray-100 transition shadow text-xs md:text-sm shrink-0"
+          >
+            ➕ Add
+          </button>
+        </div>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
-        <div className="bg-white p-6 rounded-2xl shadow hover:scale-105 transition cursor-default">
+        <div 
+          className={`bg-white p-6 rounded-2xl shadow hover:scale-105 transition cursor-pointer ${activeTab === 'all' ? 'ring-2 ring-indigo-500' : ''}`}
+          onClick={() => setActiveTab("all")}
+        >
           <p className="text-gray-400 text-sm">Total Products</p>
           <p className="text-3xl font-black text-slate-700 mt-2">
             {products.length}
@@ -193,7 +276,7 @@ export default function ManageStock() {
           <p className="text-gray-400 text-xs mt-1">Across all products</p>
         </div>
         <div
-          className={`p-6 rounded-2xl shadow hover:scale-105 transition cursor-pointer ${lowStockProducts.length > 0 ? "bg-red-50 border-2 border-red-200" : "bg-white"}`}
+          className={`p-6 rounded-2xl shadow hover:scale-105 transition cursor-pointer ${lowStockProducts.length > 0 ? "bg-red-50 border-2 border-red-200" : "bg-white"} ${activeTab === 'low' ? 'ring-2 ring-red-500' : ''}`}
           onClick={() => setActiveTab("low")}
         >
           <p className="text-gray-400 text-sm">Low Stock Items</p>
@@ -223,7 +306,7 @@ export default function ManageStock() {
       </div>
 
       {/* Low Stock Alert Banner */}
-      {lowStockProducts.length > 0 && (
+      {lowStockProducts.length > 0 && activeTab !== "low" && (
         <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-5 mb-8 flex items-start gap-4">
           <div className="text-3xl">🚨</div>
           <div className="flex-1">
@@ -263,13 +346,16 @@ export default function ManageStock() {
 
         {/* Search + Category Filters */}
         <div className="p-4 md:p-5 border-b bg-gray-50 flex flex-wrap items-center gap-3">
-          <input
-            type="text"
-            placeholder="🔍 Search product..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border-2 border-gray-200 rounded-xl px-4 py-2 text-sm focus:border-indigo-400 outline-none w-full sm:w-60"
-          />
+          <div className="relative w-full sm:w-60">
+            <input
+              type="text"
+              placeholder="Search product..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="border-2 border-gray-200 rounded-xl pl-10 pr-4 py-2 text-sm focus:border-indigo-400 outline-none w-full"
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+          </div>
           <div className="flex gap-2 flex-wrap">
             {CATEGORIES.map((cat) => (
               <button
@@ -302,7 +388,7 @@ export default function ManageStock() {
               </tr>
             </thead>
             <tbody className="text-gray-700 divide-y divide-gray-100">
-              {filteredProducts.length === 0 ? (
+              {paginatedProducts.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-14 text-center text-gray-400">
                     <div className="text-5xl mb-3">📭</div>
@@ -310,7 +396,7 @@ export default function ManageStock() {
                   </td>
                 </tr>
               ) : (
-                filteredProducts.map((p) => (
+                paginatedProducts.map((p) => (
                   <ProductRow
                     key={p.id}
                     product={p}
@@ -324,6 +410,40 @@ export default function ManageStock() {
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="p-4 border-t flex items-center justify-between bg-gray-50">
+            <span className="text-sm text-gray-500 font-medium">
+              Showing {(currentPage - 1) * 50 + 1} to {Math.min(currentPage * 50, filteredProducts.length)} of {filteredProducts.length} entries
+            </span>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                Previous
+              </button>
+              {Array.from({ length: totalPages }).map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentPage(idx + 1)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-bold transition ${currentPage === idx + 1 ? "bg-indigo-600 text-white shadow-sm" : "border border-gray-200 text-gray-600 hover:bg-gray-100"}`}
+                >
+                  {idx + 1}
+                </button>
+              ))}
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ====== EDIT MODAL ====== */}
@@ -573,7 +693,7 @@ export default function ManageStock() {
 }
 
 // ---- Row sub-component with inline restock ----
-function ProductRow({ product, stockBadge, onEdit, onRestock ,onDelete }) {
+function ProductRow({ product, stockBadge, onEdit, onRestock, onDelete }) {
   const [restockQty, setRestockQty] = useState("");
 
   const isLow = product.stock <= product.lowThreshold;

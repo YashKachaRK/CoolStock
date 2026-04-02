@@ -11,6 +11,8 @@ import ManageCustomers from './pages/admin/ManageCustomers';
 import ManagerLayout from './layouts/ManagerLayout';
 import ManagerDashboard from './pages/manager/Dashboard';
 import ManagerProfile from './pages/manager/Profile';
+import ManagerInventory from './pages/manager/Inventory';
+import ManagerOrders from './pages/manager/Orders';
 import DeliveryLayout from './layouts/DeliveryLayout';
 import DeliveryDashboard from './pages/delivery/Dashboard';
 import DeliveryProfile from './pages/delivery/Profile';
@@ -43,8 +45,8 @@ function App() {
         <Route path="/manager" element={<ManagerLayout />}>
           <Route path="dashboard" element={<ManagerDashboard />} />
           <Route path="profile" element={<ManagerProfile />} />
-          <Route path="view_products" element={<div className="p-8">Inventory</div>} />
-          <Route path="target_orders" element={<div className="p-8">Target Orders</div>} />
+          <Route path="view_products" element={<ManagerInventory />} />
+          <Route path="target_orders" element={<ManagerOrders />} />
         </Route>
         
         {/* Delivery routes */}
