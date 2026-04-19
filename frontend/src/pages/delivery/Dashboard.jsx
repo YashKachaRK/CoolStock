@@ -3,43 +3,41 @@ import axios from 'axios';
 
 const API_PROXY = "http://localhost:5000";
 
-export default function DeliveryDashboard() {
-  const [time, setTime] = useState(new Date());
-  
-  // Storage for all orders bridged via LocalStorage
-  const [allOrders, setAllOrders] = useState([]);
-  
-  // "Who am I" selector since Auth state isn't hooked up yet globally
-  const [deliveryStaff, setDeliveryStaff] = useState([]);
-  const [activeDriver, setActiveDriver] = useState('');
+const statusConfig = {
+  'Assigned': { color: 'bg-orange-100 text-orange-700', icon: '⏳', next: 'In Transit', btn: '🚀 Dispatch Order' },
+  'In Transit': { color: 'bg-blue-100 text-blue-700', icon: '🛵', next: 'Delivered', btn: '✅ Mark Delivered' },
+  'Delivered': { color: 'bg-green-100 text-green-700', icon: '💰', next: 'Paid', btn: '💵 Deposit Cash' },
+  'Paid': { color: 'bg-emerald-100 text-emerald-700', icon: '✅', next: null, btn: null }
+};
 
+export default function DeliveryDashboard() {
+  const [activeTab, setActiveTab] = useState('active'); // 'active', 'deposit', or 'history'
+  const [orders, setOrders] = useState([]);
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000);
-    
-    // Fetch real staff for the logged-in dropdown impersonation
-    axios.get(`${API_PROXY}/staff`).then(res => {
-      const dbDeliveryBoys = (res.data || []).filter(s => s.role === 'Delivery');
-      setDeliveryStaff(dbDeliveryBoys);
-    }).catch(err => console.error("Error fetching staff:", err));
-
-    // Hydrate orders mapped from Manager component
-    loadOrders();
-    
-    return () => clearInterval(timer);
+    const userData = JSON.parse(localStorage.getItem('user'));
+    setUser(userData);
+    fetchData();
   }, []);
 
-  const loadOrders = () => {
-    const savedOrders = localStorage.getItem('coolstock_orders');
-    if (savedOrders) {
-      setAllOrders(JSON.parse(savedOrders));
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [assignedRes, historyRes] = await Promise.all([
+        axios.get(`${API_PROXY}/delivery/assigned`),
+        axios.get(`${API_PROXY}/delivery/history`)
+      ]);
+      setOrders(assignedRes.data);
+      setHistory(historyRes.data);
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching delivery data:", err);
+      setLoading(false);
     }
-  };
-
-  const saveOrders = (updatedOrders) => {
-    setAllOrders(updatedOrders);
-    localStorage.setItem('coolstock_orders', JSON.stringify(updatedOrders));
   };
 
   const showToast = (message, type = 'success') => {
@@ -47,214 +45,205 @@ export default function DeliveryDashboard() {
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3500);
   };
 
-  const handleStatusChange = (orderId, newStatus) => {
-    const updated = allOrders.map(o => {
-      if (o.id === orderId) {
-        return { ...o, status: newStatus };
+  const handleStatusChange = async (orderId, newStatus) => {
+    try {
+      await axios.put(`${API_PROXY}/updateOrderStatus/${orderId}`, { status: newStatus });
+      showToast(`Order status updated to ${newStatus}!`, 'success');
+      fetchData(); // Refresh both lists
+
+      // Auto-switch tab if marking as delivered
+      if (newStatus === 'Delivered') {
+        setActiveTab('deposit');
       }
-      return o;
-    });
-    saveOrders(updated);
-    
-    if (newStatus === 'In Transit') showToast('🛵 Delivery started!', 'success');
-    if (newStatus === 'Delivered') showToast('✅ Order marked as Delivered! Cash obtained.', 'success');
-    if (newStatus === 'Cash Deposited') showToast('💰 Cash deposited to Cashier!', 'info');
+    } catch (err) {
+      console.error("Error updating status:", err);
+      showToast("Failed to update status", "error");
+    }
   };
 
-  const formattedTime = time.toLocaleTimeString('en-US', { hour12: false });
-  const formattedDate = time.toDateString();
+  if (loading) return <div className="p-10 text-center font-bold text-gray-500">Loading your deliveries...</div>;
 
-  // Active driver specific queues
-  const myAssignedOrders = allOrders.filter(o => o.deliveryBoy === activeDriver && o.status === 'Assigned');
-  const myTransitOrders = allOrders.filter(o => o.deliveryBoy === activeDriver && o.status === 'In Transit');
-  const myDeliveredOrders = allOrders.filter(o => o.deliveryBoy === activeDriver && o.status === 'Delivered');
-  const myCashDeposited = allOrders.filter(o => o.deliveryBoy === activeDriver && o.status === 'Cash Deposited');
+  // Filter Logic
+  const activeOrders = orders.filter(o => o.status === 'Assigned' || o.status === 'In Transit');
+  const depositOrders = orders.filter(o => o.status === 'Delivered');
 
   return (
-    <div className="p-4 md:p-8 w-full">
+    <div className="p-4 md:p-8 w-full max-w-6xl mx-auto">
       {/* Header */}
-      <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white p-5 md:p-7 rounded-2xl mb-6 md:mb-8 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-xl md:text-3xl font-black">🛵 Delivery Dashboard</h1>
-          <p className="opacity-90 mt-1 text-sm font-medium">Your assigned routes and pick-ups</p>
-        </div>
-        <div className="flex items-center gap-4 w-full md:w-auto">
-          <div className="bg-white/20 p-2 rounded-xl flex items-center gap-3">
-             <span className="font-bold text-sm hidden md:block">Delivery Agent:</span>
-             <select 
-                value={activeDriver}
-                onChange={e => setActiveDriver(e.target.value)}
-                className="bg-white text-gray-800 font-bold px-3 py-1.5 rounded-lg text-sm w-full md:w-48 outline-none border-none shadow-sm"
-             >
-               <option value="">— Select Account —</option>
-               {deliveryStaff.length > 0 ? (
-                 deliveryStaff.map(s => <option key={s.id} value={s.name}>🦸‍♂️ {s.name}</option>)
-               ) : (
-                 <>
-                   <option value="Neha Singh">🦸‍♂️ Neha Singh</option>
-                   <option value="Rohit Das">🦸‍♂️ Rohit Das</option>
-                   <option value="Arjun Mehta">🦸‍♂️ Arjun Mehta</option>
-                 </>
-               )}
-             </select>
+      <div className="bg-gradient-to-br from-indigo-600 to-purple-700 text-white p-6 md:p-10 rounded-[2rem] mb-8 shadow-xl flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="flex items-center gap-5">
+          <div className="bg-white/20 w-20 h-20 rounded-full flex items-center justify-center text-5xl backdrop-blur-sm border-2 border-white/30">
+            🛵
           </div>
-          <div className="text-right shrink-0 hidden md:block">
-            <div className="text-xs opacity-80">{formattedDate}</div>
-            <div className="text-xl font-black mt-0.5">{formattedTime}</div>
+          <div>
+            <h1 className="text-2xl md:text-4xl font-black">Hello, {user?.name || 'Helper'}!</h1>
+            <p className="opacity-90 mt-1 text-sm font-bold uppercase tracking-widest">Delivery Dashboard</p>
+          </div>
+        </div>
+        <div className="flex gap-4">
+          <div className="bg-black/10 px-6 py-4 rounded-3xl backdrop-blur-sm text-center">
+            <p className="text-[10px] font-black uppercase opacity-60 mb-1">Queue</p>
+            <p className="text-2xl font-black">{activeOrders.length}</p>
+          </div>
+          <div className="bg-emerald-500/20 px-6 py-4 rounded-3xl backdrop-blur-sm text-center border border-emerald-400/30">
+            <p className="text-[10px] font-black uppercase opacity-60 mb-1">Stock Cash</p>
+            <p className="text-2xl font-black">₹{depositOrders.reduce((sum, o) => sum + Number(o.amount), 0).toLocaleString()}</p>
           </div>
         </div>
       </div>
 
-      {!activeDriver ? (
-        <div className="bg-white rounded-3xl p-16 text-center shadow-sm border border-gray-100 flex flex-col items-center justify-center">
-           <div className="text-6xl mb-4">🔐</div>
-           <h2 className="text-2xl font-black text-gray-800">Please Select Your Account</h2>
-           <p className="text-gray-500 mt-2">To view your assigned orders, select your name from the top right dropdown menu.</p>
-           <button onClick={loadOrders} className="mt-6 font-bold text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 hover:bg-indigo-100 transition">↻ Force Sync with Manager</button>
-        </div>
-      ) : (
-        <>
-          {/* Stats flex */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
-            <div className="bg-white p-6 rounded-2xl shadow hover:-translate-y-1 transition duration-300">
-              <p className="text-gray-400 text-sm font-semibold">Ready to Pickup</p>
-              <p className="text-3xl font-black text-orange-500 mt-2">{myAssignedOrders.length}</p>
-            </div>
-            <div className="bg-white p-6 rounded-2xl shadow hover:-translate-y-1 transition duration-300">
-              <p className="text-gray-400 text-sm font-semibold">On The Road</p>
-              <p className="text-3xl font-black text-blue-600 mt-2">{myTransitOrders.length}</p>
-            </div>
-            <div className="bg-white p-6 rounded-2xl shadow hover:-translate-y-1 transition duration-300">
-              <p className="text-gray-400 text-sm font-semibold">Finished Today</p>
-              <p className="text-3xl font-black text-green-600 mt-2">{myDeliveredOrders.length + myCashDeposited.length}</p>
-            </div>
-            <div className="bg-white p-6 rounded-2xl shadow hover:-translate-y-1 transition duration-300 border-2 border-red-200 bg-red-50/20">
-              <p className="text-red-500 text-sm font-bold">Pending Cash</p>
-              <p className="text-3xl font-black text-red-600 mt-2">{myDeliveredOrders.length}</p>
-              <p className="text-red-400 text-xs mt-1">Submit to cashier today</p>
-            </div>
-          </div>
+      {/* Modern Tabs */}
+      <div className="flex flex-wrap gap-3 mb-8 bg-gray-100 p-2 rounded-[1.5rem] w-fit">
+        <button
+          onClick={() => setActiveTab('active')}
+          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeTab === 'active' ? 'bg-white text-indigo-600 shadow-md scale-105' : 'text-gray-500 hover:text-gray-700'}`}
+        >
+          🚀 Active Queue <span className="bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-lg ml-1">{activeOrders.length}</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('deposit')}
+          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeTab === 'deposit' ? 'bg-white text-emerald-600 shadow-md scale-105' : 'text-gray-500 hover:text-gray-700'}`}
+        >
+          💰 Deposit Cash <span className="bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-lg ml-1">{depositOrders.length}</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('history')}
+          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeTab === 'history' ? 'bg-white text-gray-600 shadow-md scale-105' : 'text-gray-500 hover:text-gray-700'}`}
+        >
+          📅 Previous Orders
+        </button>
+      </div>
 
-          <div className="flex justify-start mb-4">
-            <button 
-              onClick={loadOrders}
-              className="px-4 py-2 bg-white rounded-xl shadow-sm border border-gray-200 text-sm font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-            >
-              <span>🔄</span> Refresh Assignments
-            </button>
-          </div>
-
-          {/* ACTIVE QUEUE */}
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-8 border border-gray-100">
-            <div className="p-6 border-b bg-gray-50">
-              <h2 className="text-xl font-black text-gray-800">📋 Action Queue</h2>
-              <p className="text-gray-500 text-sm mt-0.5">Pick up goods from the manager, dispatch, and mark as delivered.</p>
-            </div>
-            <div className="p-6 space-y-4">
-              
-              {myAssignedOrders.map(order => (
-                <div key={order.id} className="border-2 border-orange-100 rounded-2xl p-5 hover:shadow-md transition">
-                  <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-black text-lg text-gray-800">#ORD-{order.id}</span>
-                        <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-0.5 rounded-full ring-1 ring-gray-200">Waiting for Pickup</span>
+      {/* Tab Content */}
+      <div className="min-h-[400px]">
+        {activeTab === 'active' && (
+          <div className="space-y-6">
+            {activeOrders.length === 0 ? (
+              <div className="bg-white rounded-[2.5rem] p-20 text-center shadow-sm border border-dashed border-gray-200">
+                <div className="text-7xl mb-6">🏜️</div>
+                <h2 className="text-2xl font-black text-gray-800">Queue is Empty!</h2>
+                <p className="text-gray-400 mt-2">No active deliveries assigned to you right now.</p>
+              </div>
+            ) : (
+              activeOrders.map(order => {
+                const cfg = statusConfig[order.status];
+                return (
+                  <div key={order.id} className="bg-white border border-gray-100 rounded-3xl p-6 md:p-8 shadow-sm hover:shadow-md transition">
+                    <div className="flex flex-col md:flex-row justify-between items-start gap-6">
+                      <div className="space-y-4 flex-1">
+                        <div className="flex items-center gap-3">
+                          <span className="font-black text-2xl text-gray-800">{order.order_number}</span>
+                          <span className={`${cfg.color} px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest`}>
+                            {cfg.icon} {order.status}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Shop / Customer</p>
+                            <p className="font-bold text-gray-800">{order.customer_name}</p>
+                            <p className="text-[11px] text-gray-500 mt-1">{order.addr}</p>
+                          </div>
+                          <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Orders Summary</p>
+                            <p className="text-[11px] text-gray-700 leading-relaxed italic">"{order.items_summary}"</p>
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-600 mt-2">🏪 <strong>{order.customer}</strong> — {order.location}</p>
-                      <p className="text-sm text-gray-500 mt-1">📦 <span className="font-medium text-gray-700">{order.items}</span></p>
-                      <div className="mt-3 inline-block bg-orange-50 text-orange-700 text-xs font-bold px-3 py-1 rounded-lg">
-                        💰 C.O.D: {order.total}
+                      <div className="w-full md:w-auto text-right flex flex-col justify-between h-full min-h-[140px]">
+                        <div>
+                          <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Collectable</p>
+                          <p className="font-black text-3xl text-indigo-600">₹{Number(order.amount).toLocaleString('en-IN')}</p>
+                        </div>
+                        <button
+                          onClick={() => handleStatusChange(order.id, cfg.next)}
+                          className="w-full bg-indigo-600 text-white py-4 px-8 rounded-2xl font-black text-sm hover:bg-indigo-700 transition shadow-lg shadow-indigo-100"
+                        >
+                          {cfg.btn}
+                        </button>
                       </div>
-                    </div>
-                    <div className="w-full sm:w-auto">
-                      <button 
-                        onClick={() => handleStatusChange(order.id, 'In Transit')}
-                        className="w-full sm:w-auto bg-orange-500 text-white py-2.5 px-6 rounded-xl font-bold text-sm hover:bg-orange-600 transition shadow hover:-translate-y-0.5"
-                      >
-                        🚀 Dispatch Order
-                      </button>
                     </div>
                   </div>
-                </div>
-              ))}
-
-              {myTransitOrders.map(order => (
-                <div key={order.id} className="border-2 border-blue-200 rounded-2xl p-5 bg-blue-50/30 hover:shadow-md transition">
-                  <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-black text-lg text-gray-800">#ORD-{order.id}</span>
-                        <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded-full ring-1 ring-blue-200">En Route 🛵</span>
-                      </div>
-                      <p className="text-sm text-gray-600 mt-2">🏪 <strong>{order.customer}</strong> — {order.location}</p>
-                      <p className="text-sm text-gray-500 mt-1">📦 <span className="font-medium text-gray-700">{order.items}</span></p>
-                      <div className="mt-3 inline-block bg-blue-50/50 text-blue-800 text-xs font-bold px-3 py-1 rounded-lg">
-                        💰 Collect Amount: {order.total}
-                      </div>
-                    </div>
-                    <div className="w-full sm:w-auto">
-                      <button 
-                        onClick={() => handleStatusChange(order.id, 'Delivered')}
-                        className="w-full sm:w-auto bg-green-500 text-white py-2.5 px-6 rounded-xl font-bold text-sm hover:bg-green-600 transition shadow hover:-translate-y-0.5"
-                      >
-                        ✅ Give to Customer
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {myAssignedOrders.length === 0 && myTransitOrders.length === 0 && (
-                <div className="p-14 text-center text-gray-400 border-2 border-dashed border-gray-100 rounded-3xl">
-                  <div className="text-6xl mb-4">🏖️</div>
-                  <p className="font-black text-xl text-gray-500">Your queue is totally clear!</p>
-                  <p className="text-sm mt-1">Wait for the manager to assign new pickups.</p>
-                </div>
-              )}
-            </div>
+                )
+              })
+            )}
           </div>
+        )}
 
-          {/* DEPOSIT TO CASHIER */}
-          <div className="grid grid-cols-1 gap-8 mb-8">
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
-              <div className="p-6 border-b flex justify-between items-center bg-gray-50">
+        {activeTab === 'deposit' && (
+          <div className="space-y-6">
+            <div className="bg-emerald-50 border-2 border-emerald-100 rounded-3xl p-8 mb-8 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-emerald-600 rounded-2xl flex items-center justify-center text-3xl text-white shadow-lg">💵</div>
                 <div>
-                  <h2 className="text-xl font-black text-gray-800">💰 Settlement Queue</h2>
+                  <h2 className="text-xl font-black text-emerald-800 tracking-tight">Deposit Outstanding Cash</h2>
+                  <p className="text-emerald-600 text-sm font-medium">Items delivered but cash not yet handed over to cashier.</p>
                 </div>
               </div>
-              <div className="p-6">
-                <div className="space-y-3">
-                  {myDeliveredOrders.map(c => (
-                    <div key={c.id} className="flex justify-between items-center bg-green-50 border border-green-200 rounded-xl p-4 transition hover:bg-green-100/50">
-                      <div>
-                        <p className="font-bold text-green-900">#ORD-{c.id}</p>
-                        <p className="text-green-700 font-extrabold text-lg mt-0.5">{c.total} <span className="text-xs font-medium uppercase truncate tracking-wider">collected</span></p>
-                      </div>
-                      <button 
-                        onClick={() => handleStatusChange(c.id, 'Cash Deposited')}
-                        className="bg-green-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-green-700 transition text-sm shadow hover:shadow-lg"
-                      >
-                        Hand Over to Cashier 💵
-                      </button>
-                    </div>
-                  ))}
-                  
-                  {myDeliveredOrders.length === 0 && (
-                    <div className="text-center py-10 text-gray-400">
-                      <div className="text-4xl mb-2 opacity-50">💸</div>
-                      <p className="font-semibold text-sm">No cash strictly pending right now. Deliver some more orders first!</p>
-                    </div>
-                  )}
-                </div>
+              <div className="text-right">
+                <p className="text-[10px] font-black uppercase text-emerald-400">Total Settlement</p>
+                <p className="text-3xl font-black text-emerald-700">₹{depositOrders.reduce((s, o) => s + Number(o.amount), 0).toLocaleString()}</p>
               </div>
             </div>
+            {depositOrders.length === 0 ? (
+              <div className="bg-white rounded-[2.5rem] p-20 text-center shadow-sm border border-dashed border-gray-200">
+                <div className="text-7xl mb-6">💎</div>
+                <h2 className="text-2xl font-black text-gray-800">All Settled!</h2>
+                <p className="text-gray-400 mt-2">You don't have any pending cash deposits.</p>
+              </div>
+            ) : (
+              depositOrders.map(order => (
+                <div key={order.id} className="bg-white border border-emerald-100 rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-6">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-black text-gray-800">{order.order_number}</span>
+                      <span className="bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest italic">Delivered</span>
+                    </div>
+                    <p className="text-xs font-bold text-gray-500 uppercase">{order.customer_name}</p>
+                  </div>
+                  <div className="text-center sm:text-right">
+                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Amount to Handover</p>
+                    <p className="text-2xl font-black text-emerald-600">₹{Number(order.amount).toLocaleString('en-IN')}</p>
+                  </div>
+                  <button
+                    onClick={() => handleStatusChange(order.id, 'Paid')}
+                    className="w-full sm:w-auto bg-emerald-600 text-white px-8 py-4 rounded-2xl font-black hover:bg-emerald-700 transition text-xs uppercase tracking-widest shadow-xl shadow-emerald-100"
+                  >
+                    Hand Over to Cashier 🏦
+                  </button>
+                </div>
+              ))
+            )}
           </div>
-        </>
-      )}
+        )}
+
+        {activeTab === 'history' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {history.map(order => (
+              <div key={order.id} className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex justify-between items-center">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-black text-gray-800">{order.order_number}</span>
+                    <span className="bg-gray-100 text-gray-500 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest">{order.status}</span>
+                  </div>
+                  <p className="text-xs font-bold text-gray-600 uppercase">{order.customer_name}</p>
+                  <p className="text-[10px] text-gray-400 mt-1">📅 {new Date(order.date).toLocaleDateString()}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-black text-lg text-emerald-600">₹{Number(order.amount).toLocaleString('en-IN')}</p>
+                  <p className="text-[9px] text-gray-400 font-black uppercase">Settled</p>
+                </div>
+              </div>
+            ))}
+            {history.length === 0 && (
+              <div className="col-span-full py-16 text-center text-gray-400 font-black uppercase tracking-widest">No history found.</div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Toast */}
       {toast.show && (
-        <div className={`fixed bottom-6 right-6 text-white px-6 py-4 rounded-2xl shadow-2xl font-bold z-50 transition-all ${toast.type === 'error' ? 'bg-red-500' : toast.type === 'info' ? 'bg-blue-600' : 'bg-emerald-500'}`}>
+        <div className={`fixed bottom-6 right-6 text-white px-8 py-5 rounded-2xl shadow-2xl font-black z-50 transition-all animate-bounce ${toast.type === 'error' ? 'bg-red-500' : 'bg-emerald-500'}`}>
           {toast.message}
         </div>
       )}

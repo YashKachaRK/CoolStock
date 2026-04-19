@@ -11,7 +11,7 @@ const { getAllProduct, addProducts, updateProduct, restock, deleteProdcuts, getE
 
 // 3. Import new Customer and Order controllers
 const { getAllCustomers, getCustomerProfile, updateCustomerProfile, addCustomer, updateCustomerStatus, deleteCustomer } = require("../controllers/customerControllers");
-const { placeOrder, getAllOrders, updateOrderStatus, getOrderDetails, getMyOrders } = require("../controllers/orderControllers");
+const { placeOrder, getAllOrders, updateOrderStatus, getOrderDetails, getMyOrders, getAssignedOrders, getDeliveryHistory } = require("../controllers/orderControllers");
 const { getAdminStats, getManagerStats } = require("../controllers/dashboardControllers");
 
 // 4. Import Auth Middleware
@@ -22,7 +22,7 @@ router.post("/loginStaff", loginStaff);
 
 // ================= STAFF ROUTES =================
 router.post("/addStaff", auth(['Admin']), addStaff);
-router.get('/staff', auth(['Admin']), staff);
+router.get('/staff', auth(['Admin', 'Manager']), staff);
 router.put("/updateStaff/:id", auth(['Admin']), updateStaff);
 router.delete("/deleteStaff/:id", auth(['Admin']), deleteStaff);
 router.put("/updateStatus/:id", auth(['Admin']), updateStatus);
@@ -55,6 +55,9 @@ router.get("/adminStats", auth(['Admin']), getAdminStats);
 router.get("/managerStats", auth(['Admin', 'Manager']), getManagerStats);
 
 router.get("/myOrders", auth(['Customer']), getMyOrders);
+
+router.get("/delivery/assigned", auth(['Delivery']), getAssignedOrders);
+router.get("/delivery/history", auth(['Delivery']), getDeliveryHistory);
 
 router.get("/admin/applications", auth(['Admin']), getApplications);
 router.put("/admin/updateApplication/:id", auth(['Admin']), updateApplicationStatus);

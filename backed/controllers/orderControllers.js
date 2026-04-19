@@ -154,3 +154,43 @@ exports.getMyOrders = (req, res) => {
         res.json(result);
     });
 };
+
+// Get assigned orders for delivery boy
+exports.getAssignedOrders = (req, res) => {
+    const deliveryBoyId = req.user.id;
+    const sql = `
+        SELECT o.*, c.shop as customer_name, c.addr as customer_addr, c.phone as customer_phone,
+               GROUP_CONCAT(CONCAT(p.name, ' x ', oi.quantity) SEPARATOR ', ') as items_summary
+        FROM orders o
+        JOIN customers c ON o.customer_id = c.id
+        LEFT JOIN order_items oi ON o.id = oi.order_id
+        LEFT JOIN products p ON oi.product_id = p.id
+        WHERE o.delivery_boy_id = ? AND o.status IN ('Assigned', 'In Transit')
+        GROUP BY o.id
+        ORDER BY o.date DESC
+    `;
+    db.query(sql, [deliveryBoyId], (err, result) => {
+        if (err) return res.status(500).send(err);
+        res.json(result);
+    });
+};
+
+// Get delivery history for delivery boy
+exports.getDeliveryHistory = (req, res) => {
+    const deliveryBoyId = req.user.id;
+    const sql = `
+        SELECT o.*, c.shop as customer_name, c.addr as customer_addr,
+               GROUP_CONCAT(CONCAT(p.name, ' x ', oi.quantity) SEPARATOR ', ') as items_summary
+        FROM orders o
+        JOIN customers c ON o.customer_id = c.id
+        LEFT JOIN order_items oi ON o.id = oi.order_id
+        LEFT JOIN products p ON oi.product_id = p.id
+        WHERE o.delivery_boy_id = ? AND o.status IN ('Delivered', 'Cash Deposited', 'Paid')
+        GROUP BY o.id
+        ORDER BY o.date DESC
+    `;
+    db.query(sql, [deliveryBoyId], (err, result) => {
+        if (err) return res.status(500).send(err);
+        res.json(result);
+    });
+};
