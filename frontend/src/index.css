@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", sans-serif;
+}
+
+body {
+  margin: 0;
+  @apply bg-gray-50 text-gray-800;
+}

@@ -1,0 +1,27 @@
+const jwt = require("jsonwebtoken");
+
+const auth = (roles = []) => {
+    return (req, res, next) => {
+        const token = req.header("Authorization")?.replace("Bearer ", "");
+
+        if (!token) {
+            return res.status(401).json({ msg: "No token, authorization denied" });
+        }
+
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || "fallback_secret");
+            req.user = decoded;
+
+            // Check role if roles are specified
+            if (roles.length > 0 && !roles.includes(req.user.role)) {
+                return res.status(403).json({ msg: "Access denied: insufficient permissions" });
+            }
+
+            next();
+        } catch (err) {
+            res.status(401).json({ msg: "Token is not valid" });
+        }
+    };
+};
+
+module.exports = auth;
