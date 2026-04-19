@@ -51,13 +51,10 @@ exports.addStaff = async (req, res) => {
 };
 
 exports.staff = async (req, res) => {
-  console.log(`🔍 Staff Fetching Request from: ${req.user.email} (Role: ${req.user.role})`);
   try {
     const result = await query("SELECT * FROM staff", []);
-    console.log(`✅ Returning ${result.length} staff members`);
     res.json(result);
   } catch (err) {
-    console.error("❌ Staff Fetching Error:", err);
     res.status(500).send(err);
   }
 };
