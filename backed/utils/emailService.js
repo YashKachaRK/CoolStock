@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
 
 const sendEmail = async (to, subject, html) => {
     try {
-        console.log(`📡 Attempting to send email to: ${to} | Subject: ${subject}`);
+        // Attempting to send...
         const mailOptions = {
             from: `"CoolStock Ice Cream" <${process.env.EMAIL_USER || "rshiyal632@rku.ac.in"}>`,
             to,
@@ -20,7 +20,7 @@ const sendEmail = async (to, subject, html) => {
         };
 
         const info = await transporter.sendMail(mailOptions);
-        console.log("✅ Email sent successfully:", info.response);
+        // Successfully sent
         return info;
     } catch (error) {
         console.error("❌ Nodemailer Error:", error.message);

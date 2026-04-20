@@ -30,7 +30,6 @@ export default function Dashboard() {
     // 2. Fetch Applications
     try {
       const res = await axios.get(`${API}/admin/applications`);
-      console.log("Fetched Applications:", res.data); // Debug log
       setRequests(res.data.filter(r => r.status === 'Pending'));
     } catch (err) {
       console.error("Applications Fetch Error:", err);

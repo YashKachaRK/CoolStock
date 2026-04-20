@@ -35,13 +35,13 @@ export default function Inventory() {
     setTimeout(() => setToast({ show: false, message: "", type }), 3000);
   };
 
-  // ✅ FETCH PRODUCTS
+  // Fetch Products
   const fetchProducts = async () => {
     try {
       const res = await axios.get(`${API}/products`);
       setProducts(res.data);
     } catch (err) {
-      console.log(err);
+      console.error("Fetch Products Error:", err);
     }
   };
 
@@ -66,7 +66,7 @@ export default function Inventory() {
     setCurrentPage(1);
   }, [search, activeCategory, activeTab]);
 
-  // ✅ RESTOCK
+  // Restock
   const handleRestock = async (id, qty) => {
     try {
       const product = products.find((p) => p.id === id);
@@ -83,7 +83,7 @@ export default function Inventory() {
     }
   };
 
-  // ✅ EDIT SAVE
+  // Edit Save
   const handleEditSave = async () => {
     try {
       await axios.put(`${API}/updateProduct/${editModal.id}`, editModal);
@@ -96,7 +96,7 @@ export default function Inventory() {
     }
   };
 
-  // ✅ ADD PRODUCT
+  // Add Product
   const handleAddProduct = async () => {
     if (
       !newProduct.name ||
@@ -146,7 +146,7 @@ export default function Inventory() {
       showToast("❌ Delete failed", "error");
     }
   };
-  
+
   const stockBadge = (stock, threshold) => {
     if (stock <= threshold) {
       return (
@@ -173,7 +173,7 @@ export default function Inventory() {
     const headers = ["ID", "Name", "Category", "Unit", "Price", "Stock", "Low Threshold"];
     const csvRows = [];
     csvRows.push(headers.join(','));
-    
+
     for (const p of filteredProducts) {
       const row = [p.id, `"${p.name}"`, `"${p.category}"`, `"${p.unit}"`, p.price, p.stock, p.lowThreshold];
       csvRows.push(row.join(','));
@@ -202,7 +202,7 @@ export default function Inventory() {
     filteredProducts.forEach((p, index) => {
       const isLow = p.stock <= p.lowThreshold;
       if (isLow) lowStockRowIndexes.add(index);
-      
+
       const status = isLow ? "Low Stock" : "In Stock";
       const pData = [p.id, p.name, p.category, `Rs. ${p.price}`, p.stock, status];
       tableRows.push(pData);
@@ -220,7 +220,7 @@ export default function Inventory() {
         }
       }
     });
-    
+
     doc.save("inventory_data.pdf");
   };
 
@@ -258,7 +258,7 @@ export default function Inventory() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
-        <div 
+        <div
           className={`bg-white p-6 rounded-2xl shadow hover:scale-105 transition cursor-pointer ${activeTab === 'all' ? 'ring-2 ring-indigo-500' : ''}`}
           onClick={() => setActiveTab("all")}
         >
@@ -410,7 +410,7 @@ export default function Inventory() {
             </tbody>
           </table>
         </div>
-        
+
         {/* Pagination Controls */}
         {totalPages > 1 && (
           <div className="p-4 border-t flex items-center justify-between bg-gray-50">

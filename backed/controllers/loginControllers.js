@@ -14,22 +14,22 @@ exports.loginStaff = (req, res) => {
     }
     const user = result[0];
 
-    const isMatch = await bcrypt.compare(password , user.password);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ msg: "Invalid password" });
     }
 
-    if(user.role !== role){
-      return res.status(403).json({msg : "Role is mismatcg...."})
+    if (user.role !== role) {
+      return res.status(403).json({ msg: "Role is mismatcg...." })
     }
-    console.log("Done");
-    
+    // Done
+
     res.json({
-      msg : "Login Succesfull",
-      user:{
-        id : user.id,
-        email : user.email,
-        role : user.role,
+      msg: "Login Succesfull",
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
       },
     });
   });
