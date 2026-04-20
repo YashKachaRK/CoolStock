@@ -23,11 +23,7 @@ export default function ManageStaff() {
     phone: "",
     password: "",
 
-    joined: new Date().toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }),
+    joined: new Date().toISOString(),
     status: "Active",
   });
 
@@ -115,11 +111,7 @@ export default function ManageStaff() {
           email: "",
           phone: "",
           password: "",
-          joined: new Date().toLocaleDateString("en-IN", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          }),
+          joined: new Date().toISOString(),
           status: "Active",
         });
 
@@ -290,7 +282,7 @@ export default function ManageStaff() {
                       <span
                         className={`px-2 py-0.5 rounded-full text-xs font-bold ${ROLE_COLORS[s.role]}`}
                       >
-                        {s.icon} {s.role}
+                        {ROLE_ICONS[s.role]} {s.role}
                       </span>
                     </td>
                     <td className="px-6 text-gray-500 font-mono text-xs">
@@ -326,7 +318,7 @@ export default function ManageStaff() {
                           🗑 Delete
                         </button>
                         <button
-                          onClick={() => handleToggleStatus(s.id , s.status)}
+                          onClick={() => handleToggleStatus(s.id, s.status)}
                           className="bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-yellow-200 transition"
                         >
                           {s.status === "Active" ? "⏸" : "▶️"}
@@ -352,7 +344,7 @@ export default function ManageStaff() {
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
             <div className="bg-gradient-to-r from-slate-800 to-blue-700 text-white p-7 text-center">
               <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center text-4xl mx-auto mb-3">
-                {viewStaff.icon}
+                {ROLE_ICONS[viewStaff.role]}
               </div>
               <h2 className="text-2xl font-black">{viewStaff.name}</h2>
               <span
@@ -581,6 +573,21 @@ export default function ManageStaff() {
                   }
                   className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-blue-400 outline-none text-sm"
                   placeholder="Enter email"
+                />
+              </div>
+
+              {/* Username */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                  Username
+                </label>
+                <input
+                  value={editStaff.username}
+                  onChange={(e) =>
+                    setEditStaff({ ...editStaff, username: e.target.value })
+                  }
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-blue-400 outline-none text-sm"
+                  placeholder="Enter username"
                 />
               </div>
 

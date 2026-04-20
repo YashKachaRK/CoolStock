@@ -1,161 +1,179 @@
-import { useState, useEffect, useRef } from 'react';
-
-const STORAGE_KEY = 'cs_profile_cust1';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 export default function CustomerProfile() {
   const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState({
-    name: 'Ramesh Patel',
-    shop: 'Ramesh General Store',
-    email: 'ramesh@gmail.com',
-    phone: '+91 94001 11111',
-    addr: 'Village Khari, Dist. Anand',
-    photo: ''
+    name: '',
+    shop: '',
+    email: '',
+    phone: '',
+    addr: '',
+    joined: ''
   });
+  const [loading, setLoading] = useState(true);
   const [savedMsg, setSavedMsg] = useState(false);
-  const fileInputRef = useRef(null);
+  const [error, setError] = useState("");
+
+  const API = "http://localhost:5000";
 
   useEffect(() => {
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    setProfile(prev => ({ ...prev, ...data }));
+    const fetchProfile = async () => {
+      try {
+        const res = await axios.get(`${API}/customerProfile`);
+        setProfile(res.data);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching profile:", err);
+        setError("Failed to load profile data.");
+        setLoading(false);
+      }
+    };
+    fetchProfile();
   }, []);
 
-  const handleSave = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
-    setIsEditing(false);
-    setSavedMsg(true);
-    setTimeout(() => setSavedMsg(false), 3000);
+  const handleSave = async () => {
+    try {
+      await axios.put(`${API}/updateCustomerProfile`, {
+        name: profile.name,
+        shop: profile.shop,
+        addr: profile.addr,
+        phone: profile.phone
+      });
+      setIsEditing(false);
+      setSavedMsg(true);
+      setTimeout(() => setSavedMsg(false), 3000);
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      alert("Failed to update profile.");
+    }
   };
 
-  const handlePhotoUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const src = event.target.result;
-      const newProfile = { ...profile, photo: src };
-      setProfile(newProfile);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newProfile));
-    };
-    reader.readAsDataURL(file);
-  };
+  if (loading) return <div className="p-10 text-center font-bold text-gray-500">Loading profile...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8">
-      <div className="bg-gradient-to-r from-purple-600 to-pink-500 text-white p-7 rounded-2xl mb-8 shadow-lg">
-        <h1 className="text-3xl font-black">👤 My Profile</h1>
-        <p className="opacity-70 mt-1">Manage your shop account and contact details</p>
+    <div className="max-w-5xl mx-auto px-4 md:px-8 py-8">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white p-10 rounded-[2.5rem] mb-10 shadow-xl flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="flex items-center gap-6">
+          <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center text-5xl backdrop-blur-sm border-2 border-white/30">
+            🏪
+          </div>
+          <div>
+            <h1 className="text-3xl font-black">{profile.name}</h1>
+            <p className="opacity-80 font-bold uppercase tracking-widest text-xs mt-1">Official Member since {new Date(profile.joined).getFullYear()}</p>
+          </div>
+        </div>
+        <div className="bg-black/10 px-6 py-4 rounded-3xl backdrop-blur-sm text-center">
+          <p className="text-[10px] font-black uppercase opacity-60 mb-1">Account Status</p>
+          <span className="bg-green-400 text-green-900 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+            {profile.status}
+          </span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
-        {/* Photo Card */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col items-center text-center">
-          <div className="relative mb-4">
-            {profile.photo ? (
-              <img src={profile.photo} alt="Profile" className="w-36 h-36 rounded-full border-4 border-purple-100 shadow-md object-cover bg-gray-100" />
-            ) : (
-              <div className="w-36 h-36 rounded-full border-4 border-purple-100 shadow-md bg-gray-100 flex items-center justify-center text-5xl text-gray-400">
-                🏪
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        {/* Left Side: Summary Card */}
+        <div className="space-y-6">
+          <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100 text-center">
+            <h2 className="text-lg font-black text-gray-800 mb-6">Shop Summary</h2>
+            <div className="space-y-4">
+              <div className="p-4 bg-gray-50 rounded-2xl">
+                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Company / Shop</p>
+                <p className="font-bold text-gray-800">{profile.shop}</p>
               </div>
-            )}
-            <button 
-              onClick={() => fileInputRef.current.click()}
-              className="absolute bottom-1 right-1 bg-purple-600 text-white w-9 h-9 rounded-full flex items-center justify-center text-lg shadow hover:bg-purple-800 transition"
-            >
-              📷
-            </button>
+              <div className="p-4 bg-gray-50 rounded-2xl">
+                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Registered Email</p>
+                <p className="font-bold text-gray-800 text-sm">{profile.email}</p>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-2xl">
+                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Member Since</p>
+                <p className="font-bold text-gray-800">{new Date(profile.joined).toLocaleDateString('en-IN', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+              </div>
+            </div>
           </div>
-          <input type="file" ref={fileInputRef} accept="image/*" onChange={handlePhotoUpload} className="hidden" />
-          
-          <p className="font-black text-xl text-gray-800">{profile.name}</p>
-          <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-bold mt-1">🏪 Customer</span>
-          
-          <button 
-            onClick={() => fileInputRef.current.click()}
-            className="mt-4 w-full py-2 bg-purple-600 text-white rounded-xl font-semibold text-sm hover:bg-purple-800 transition"
-          >
-            📷 Change Photo
-          </button>
-          <p className="text-xs text-gray-400 mt-2">Photo visible to Admin</p>
         </div>
 
-        {/* Details Card */}
-        <div className="col-span-2 bg-white rounded-2xl shadow-lg p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-gray-800">Account Details</h2>
-            <button 
-              onClick={() => setIsEditing(!isEditing)}
-              className="bg-purple-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-purple-800 transition"
-            >
-              {isEditing ? '✖ Cancel' : '✏️ Edit Profile'}
-            </button>
+        {/* Right Side: Edit Form */}
+        <div className="lg:col-span-2">
+          <div className="bg-white rounded-[2rem] p-8 md:p-10 shadow-sm border border-gray-100">
+            <div className="flex justify-between items-center mb-10">
+              <div>
+                <h2 className="text-2xl font-black text-gray-800">Edit Details</h2>
+                <p className="text-gray-400 text-sm font-medium mt-1">Keep your shop information up to date.</p>
+              </div>
+              <button
+                onClick={() => setIsEditing(!isEditing)}
+                className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${isEditing
+                    ? "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                    : "bg-purple-600 text-white shadow-lg shadow-purple-100 hover:scale-105"
+                  }`}
+              >
+                {isEditing ? 'Cancel Edit' : 'Edit Profile'}
+              </button>
+            </div>
+
+            {error && <div className="bg-red-50 text-red-500 p-4 rounded-2xl mb-8 text-sm font-bold border border-red-100">⚠️ {error}</div>}
+            {savedMsg && <div className="bg-green-50 text-green-700 p-4 rounded-2xl mb-8 text-sm font-bold border border-green-100 animate-bounce">✅ Profile Updated Successfully!</div>}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Owner Name</label>
+                <input
+                  type="text"
+                  disabled={!isEditing}
+                  value={profile.name}
+                  onChange={e => setProfile({ ...profile, name: e.target.value })}
+                  className="w-full bg-gray-50/50 border-2 border-gray-100 rounded-2xl px-5 py-3.5 text-sm font-bold text-gray-800 outline-none focus:border-purple-400 focus:bg-white transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Shop Name</label>
+                <input
+                  type="text"
+                  disabled={!isEditing}
+                  value={profile.shop}
+                  onChange={e => setProfile({ ...profile, shop: e.target.value })}
+                  className="w-full bg-gray-50/50 border-2 border-gray-100 rounded-2xl px-5 py-3.5 text-sm font-bold text-gray-800 outline-none focus:border-purple-400 focus:bg-white transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Contact Phone</label>
+                <input
+                  type="text"
+                  disabled={!isEditing}
+                  value={profile.phone}
+                  onChange={e => setProfile({ ...profile, phone: e.target.value })}
+                  className="w-full bg-gray-50/50 border-2 border-gray-100 rounded-2xl px-5 py-3.5 text-sm font-bold text-gray-800 outline-none focus:border-purple-400 focus:bg-white transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Shop Address</label>
+                <input
+                  type="text"
+                  disabled={!isEditing}
+                  value={profile.addr}
+                  onChange={e => setProfile({ ...profile, addr: e.target.value })}
+                  className="w-full bg-gray-50/50 border-2 border-gray-100 rounded-2xl px-5 py-3.5 text-sm font-bold text-gray-800 outline-none focus:border-purple-400 focus:bg-white transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                />
+              </div>
+            </div>
+
+            {isEditing && (
+              <button
+                onClick={handleSave}
+                className="mt-12 w-full py-5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-black rounded-2xl shadow-xl shadow-purple-100 hover:scale-[1.01] active:scale-95 transition-all text-lg"
+              >
+                💾 Save Account Changes
+              </button>
+            )}
+
+            {!isEditing && (
+              <p className="mt-10 text-center text-[10px] text-gray-300 font-bold uppercase tracking-widest italic">
+                To change your email or password, please contact the Main Administrator.
+              </p>
+            )}
           </div>
-
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold text-gray-400 uppercase">Owner Name</label>
-                {!isEditing ? (
-                  <p className="font-semibold text-gray-800 mt-0.5">{profile.name}</p>
-                ) : (
-                  <input type="text" value={profile.name} onChange={e => setProfile({...profile, name: e.target.value})} className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 mt-0.5 text-sm outline-none focus:border-purple-400" />
-                )}
-              </div>
-              <div>
-                <label className="text-xs font-bold text-gray-400 uppercase">Shop Name</label>
-                {!isEditing ? (
-                  <p className="font-semibold text-gray-800 mt-0.5">{profile.shop}</p>
-                ) : (
-                  <input type="text" value={profile.shop} onChange={e => setProfile({...profile, shop: e.target.value})} className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 mt-0.5 text-sm outline-none focus:border-purple-400" />
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold text-gray-400 uppercase">Email</label>
-                {!isEditing ? (
-                  <p className="font-semibold text-gray-800 mt-0.5">{profile.email}</p>
-                ) : (
-                  <input type="email" value={profile.email} onChange={e => setProfile({...profile, email: e.target.value})} className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 mt-0.5 text-sm outline-none focus:border-purple-400" />
-                )}
-              </div>
-              <div>
-                <label className="text-xs font-bold text-gray-400 uppercase">Contact</label>
-                {!isEditing ? (
-                  <p className="font-semibold text-gray-800 mt-0.5">{profile.phone}</p>
-                ) : (
-                  <input type="text" value={profile.phone} onChange={e => setProfile({...profile, phone: e.target.value})} className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 mt-0.5 text-sm outline-none focus:border-purple-400" />
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-bold text-gray-400 uppercase">Shop Address</label>
-              {!isEditing ? (
-                <p className="font-semibold text-gray-800 mt-0.5">{profile.addr}</p>
-              ) : (
-                <input type="text" value={profile.addr} onChange={e => setProfile({...profile, addr: e.target.value})} className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 mt-0.5 text-sm outline-none focus:border-purple-400" />
-              )}
-            </div>
-            
-            <div>
-              <label className="text-xs font-bold text-gray-400 uppercase">Username</label>
-              <p className="font-semibold text-gray-800 mt-0.5">customer</p>
-            </div>
-          </div>
-
-          {isEditing && (
-            <button onClick={handleSave} className="mt-6 w-full py-3 bg-emerald-600 text-white font-black rounded-2xl hover:bg-emerald-700 transition">
-              💾 Save Changes
-            </button>
-          )}
-
-          {savedMsg && (
-            <div className="mt-4 bg-green-50 text-green-700 p-3 rounded-xl text-sm font-semibold text-center">
-              ✅ Profile updated successfully!
-            </div>
-          )}
         </div>
       </div>
     </div>

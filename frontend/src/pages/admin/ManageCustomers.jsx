@@ -1,24 +1,41 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const INITIAL_CUSTOMERS = [
-  { id: 1, name: 'Ramesh Patel',    shop: 'Ramesh General Store',    addr: 'Village Khari, Dist. Anand', phone: '+91 94001 11111', email: 'ramesh@gmail.com',  orders: 8,  totalSpent: 62400, joined: '5 Jan 2025',  status: 'Active' },
-  { id: 2, name: 'Suresh Kumar',    shop: 'Kumar Sweets & Stores',   addr: 'Borsad, Anand',              phone: '+91 94002 22222', email: 'suresh@gmail.com',  orders: 5,  totalSpent: 44200, joined: '12 Jan 2025', status: 'Active' },
-  { id: 3, name: 'Vijay Sharma',    shop: 'Sharma Cold Store',       addr: 'Anklav, Anand',              phone: '+91 94003 33333', email: 'vijay@gmail.com',   orders: 12, totalSpent: 98700, joined: '20 Jan 2025', status: 'Active' },
-  { id: 4, name: 'Kamlesh Patel',   shop: 'Patel Kirana Shop',      addr: 'Nadiad, Kheda',              phone: '+91 94004 44444', email: 'kamlesh@gmail.com', orders: 3,  totalSpent: 22400, joined: '1 Feb 2025',  status: 'Active' },
-  { id: 5, name: 'Dilip Joshi',     shop: 'Joshi Provisions',       addr: 'Nadiad, Kheda',              phone: '+91 94005 55555', email: 'dilip@gmail.com',   orders: 6,  totalSpent: 51800, joined: '15 Feb 2025', status: 'Active' },
-  { id: 6, name: 'Manoj Mehta',     shop: 'Mehta Traders',          addr: 'Anand City',                 phone: '+91 94006 66666', email: 'manoj@gmail.com',   orders: 9,  totalSpent: 73200, joined: '20 Feb 2025', status: 'Active' },
-  { id: 7, name: 'Bhavesh Desai',   shop: 'Desai Marts',            addr: 'Vallabh Vidyanagar',         phone: '+91 94007 77777', email: 'bhavesh@gmail.com', orders: 2,  totalSpent: 14800, joined: '1 Mar 2025',  status: 'Inactive' },
-  { id: 8, name: 'Nilesh Soni',     shop: 'Soni Cold Corner',       addr: 'Karamsad, Anand',            phone: '+91 94008 88888', email: 'nilesh@gmail.com',  orders: 7,  totalSpent: 58600, joined: '5 Mar 2025',  status: 'Active' },
+  { id: 1, name: 'Ramesh Patel', shop: 'Ramesh General Store', addr: 'Village Khari, Dist. Anand', phone: '+91 94001 11111', email: 'ramesh@gmail.com', orders: 8, totalSpent: 62400, joined: '5 Jan 2025', status: 'Active' },
+  { id: 2, name: 'Suresh Kumar', shop: 'Kumar Sweets & Stores', addr: 'Borsad, Anand', phone: '+91 94002 22222', email: 'suresh@gmail.com', orders: 5, totalSpent: 44200, joined: '12 Jan 2025', status: 'Active' },
+  { id: 3, name: 'Vijay Sharma', shop: 'Sharma Cold Store', addr: 'Anklav, Anand', phone: '+91 94003 33333', email: 'vijay@gmail.com', orders: 12, totalSpent: 98700, joined: '20 Jan 2025', status: 'Active' },
+  { id: 4, name: 'Kamlesh Patel', shop: 'Patel Kirana Shop', addr: 'Nadiad, Kheda', phone: '+91 94004 44444', email: 'kamlesh@gmail.com', orders: 3, totalSpent: 22400, joined: '1 Feb 2025', status: 'Active' },
+  { id: 5, name: 'Dilip Joshi', shop: 'Joshi Provisions', addr: 'Nadiad, Kheda', phone: '+91 94005 55555', email: 'dilip@gmail.com', orders: 6, totalSpent: 51800, joined: '15 Feb 2025', status: 'Active' },
+  { id: 6, name: 'Manoj Mehta', shop: 'Mehta Traders', addr: 'Anand City', phone: '+91 94006 66666', email: 'manoj@gmail.com', orders: 9, totalSpent: 73200, joined: '20 Feb 2025', status: 'Active' },
+  { id: 7, name: 'Bhavesh Desai', shop: 'Desai Marts', addr: 'Vallabh Vidyanagar', phone: '+91 94007 77777', email: 'bhavesh@gmail.com', orders: 2, totalSpent: 14800, joined: '1 Mar 2025', status: 'Inactive' },
+  { id: 8, name: 'Nilesh Soni', shop: 'Soni Cold Corner', addr: 'Karamsad, Anand', phone: '+91 94008 88888', email: 'nilesh@gmail.com', orders: 7, totalSpent: 58600, joined: '5 Mar 2025', status: 'Active' },
 ];
 
 export default function ManageCustomers() {
-  const [customers, setCustomers] = useState(INITIAL_CUSTOMERS);
+  const [customers, setCustomers] = useState([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [viewCustomer, setViewCustomer] = useState(null);
   const [addModal, setAddModal] = useState(false);
-  const [newCust, setNewCust] = useState({ name: '', shop: '', addr: '', phone: '', email: '', orders: 0, totalSpent: 0, joined: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), status: 'Active' });
+  const [newCust, setNewCust] = useState({ name: '', shop: '', addr: '', phone: '', email: '', status: 'Active' });
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  const API = "http://localhost:5000";
+
+  const fetchCustomers = async () => {
+    try {
+      const res = await axios.get(`${API}/customers`);
+      setCustomers(res.data);
+    } catch (err) {
+      console.error(err);
+      showToast('❌ Error fetching customers', 'error');
+    }
+  };
+
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
 
   const showToast = (msg, type = 'success') => {
     setToast({ show: true, message: msg, type });
@@ -37,27 +54,43 @@ export default function ManageCustomers() {
   const activeCount = customers.filter(c => c.status === 'Active').length;
   const totalOrders = customers.reduce((s, c) => s + c.orders, 0);
 
-  const handleToggleStatus = (id) => {
-    setCustomers(prev => prev.map(c => c.id === id ? { ...c, status: c.status === 'Active' ? 'Inactive' : 'Active' } : c));
-    showToast('✅ Customer status updated.');
+  const handleToggleStatus = async (id, currentStatus) => {
+    const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+    try {
+      await axios.put(`${API}/updateCustomerStatus/${id}`, { status: newStatus });
+      showToast('✅ Customer status updated.');
+      fetchCustomers();
+    } catch (err) {
+      showToast('❌ Error updating status', 'error');
+    }
   };
 
-  const handleRemove = (id) => {
-    setCustomers(prev => prev.filter(c => c.id !== id));
-    setViewCustomer(null);
-    showToast('🗑️ Customer removed.', 'error');
+  const handleRemove = async (id) => {
+    if (!window.confirm("Are you sure you want to remove this customer?")) return;
+    try {
+      await axios.delete(`${API}/deleteCustomer/${id}`);
+      setViewCustomer(null);
+      showToast('🗑️ Customer removed.');
+      fetchCustomers();
+    } catch (err) {
+      showToast('❌ Error removing customer', 'error');
+    }
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newCust.name || !newCust.shop || !newCust.phone) {
       showToast('⚠️ Please fill all required fields!', 'error');
       return;
     }
-    const id = Math.max(...customers.map(c => c.id)) + 1;
-    setCustomers(prev => [...prev, { ...newCust, id }]);
-    setAddModal(false);
-    setNewCust({ name: '', shop: '', addr: '', phone: '', email: '', orders: 0, totalSpent: 0, joined: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), status: 'Active' });
-    showToast('🎉 New customer added!');
+    try {
+      await axios.post(`${API}/addCustomer`, newCust);
+      setAddModal(false);
+      setNewCust({ name: '', shop: '', addr: '', phone: '', email: '', status: 'Active' });
+      showToast('🎉 New customer added!');
+      fetchCustomers();
+    } catch (err) {
+      showToast('❌ Error adding customer', 'error');
+    }
   };
 
   // Top spender
@@ -170,7 +203,7 @@ export default function ManageCustomers() {
                     <span className="font-black text-purple-600 text-lg">{c.orders}</span>
                   </td>
                   <td className="px-6 font-bold text-rose-600">₹{c.totalSpent.toLocaleString('en-IN')}</td>
-                  <td className="px-6 text-gray-400 text-xs">{c.joined}</td>
+                  <td className="px-6 text-gray-400 text-xs">{new Date(c.joined).toLocaleDateString('en-IN')}</td>
                   <td className="px-6">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${c.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                       {c.status === 'Active' ? '✅ Active' : '⏸ Inactive'}
@@ -179,7 +212,7 @@ export default function ManageCustomers() {
                   <td className="px-6 py-3">
                     <div className="flex gap-2">
                       <button onClick={() => setViewCustomer(c)} className="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-200 transition">👁 View</button>
-                      <button onClick={() => handleToggleStatus(c.id)} className="bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-yellow-200 transition">
+                      <button onClick={() => handleToggleStatus(c.id, c.status)} className="bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-yellow-200 transition">
                         {c.status === 'Active' ? '⏸' : '▶️'}
                       </button>
                     </div>
@@ -205,7 +238,7 @@ export default function ManageCustomers() {
                 ['📍 Address', viewCustomer.addr],
                 ['📞 Phone', viewCustomer.phone],
                 ['📧 Email', viewCustomer.email],
-                ['📅 Joined', viewCustomer.joined],
+                ['📅 Joined', new Date(viewCustomer.joined).toLocaleDateString('en-IN')],
                 ['🧾 Total Orders', viewCustomer.orders],
                 ['💰 Total Spent', `₹${viewCustomer.totalSpent.toLocaleString('en-IN')}`],
               ].map(([label, val]) => (

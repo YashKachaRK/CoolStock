@@ -1,16 +1,54 @@
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 export default function Dashboard() {
   const [time, setTime] = useState(new Date());
-  const [requests, setRequests] = useState([
-    { id: 1, name: 'Rajesh Kumar', phone: '+91 98765 43210', email: 'rajesh@example.com', role: 'Delivery Boy', applied: '10 Mar 2026', note: 'I have 2 years of delivery experience in the food industry. Available for day shifts.', bgUrl: 'bg-orange-100', color: 'text-blue-600' },
-    { id: 2, name: 'Sunita Patel', phone: '+91 87654 32109', email: 'sunita@example.com', role: 'Cashier', applied: '9 Mar 2026', note: 'Commerce graduate with tally and billing experience. Looking for full-time work.', bgUrl: 'bg-blue-100', color: 'text-purple-600' },
-    { id: 3, name: 'Vikram Shah', phone: '+91 76543 21098', email: 'vikram@example.com', role: 'Manager', applied: '8 Mar 2026', note: '5 years in wholesale distribution management. Can handle team coordination and order workflows.', bgUrl: 'bg-green-100', color: 'text-indigo-600' }
-  ]);
+  const [stats, setStats] = useState({
+    totalRevenue: 0,
+    totalOrders: 0,
+    activeCustomers: 0,
+    totalStaff: 0,
+    lowStock: 0,
+    recentOrders: []
+  });
+  const [requests, setRequests] = useState([]);
+  const [staffList, setStaffList] = useState([]);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  const API = "http://localhost:5000";
+
+  const fetchDashboardData = async () => {
+    // 1. Fetch Stats
+    try {
+      const res = await axios.get(`${API}/adminStats`);
+      setStats(res.data);
+    } catch (err) {
+      console.error("Stats Fetch Error:", err);
+      showToast("❌ Failed to load statistics", "error");
+    }
+
+    // 2. Fetch Applications
+    try {
+      const res = await axios.get(`${API}/admin/applications`);
+      console.log("Fetched Applications:", res.data); // Debug log
+      setRequests(res.data.filter(r => r.status === 'Pending'));
+    } catch (err) {
+      console.error("Applications Fetch Error:", err);
+      showToast("❌ Failed to load join requests", "error");
+    }
+
+    // 3. Fetch Staff
+    try {
+      const res = await axios.get(`${API}/staff`);
+      setStaffList(res.data.filter(s => s.status === 'Active').slice(0, 5));
+    } catch (err) {
+      console.error("Staff Fetch Error:", err);
+    }
+  };
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
+    fetchDashboardData();
     return () => clearInterval(timer);
   }, []);
 
@@ -19,14 +57,26 @@ export default function Dashboard() {
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
   };
 
-  const handleApprove = (id, name) => {
-    setRequests(requests.filter(req => req.id !== id));
-    showToast(`✅ ${name} has been approved and added to the system!`, 'success');
+  const handleApprove = async (id, name) => {
+    try {
+      showToast(`⏳ Approving ${name}...`, 'info');
+      await axios.put(`${API}/admin/updateApplication/${id}`, { status: 'Accepted' });
+      showToast(`✅ ${name} has been approved!`, 'success');
+      fetchDashboardData();
+    } catch (err) {
+      console.error("Approval Error:", err.response?.data || err.message);
+      showToast(`❌ Error: ${err.response?.data || 'Failed to approve'}`, 'error');
+    }
   };
 
-  const handleReject = (id) => {
-    setRequests(requests.filter(req => req.id !== id));
-    showToast('❌ Application rejected.', 'error');
+  const handleReject = async (id) => {
+    try {
+      await axios.put(`${API}/admin/updateApplication/${id}`, { status: 'Rejected' });
+      showToast('❌ Application rejected.', 'error');
+      fetchDashboardData();
+    } catch (err) {
+      showToast('❌ Error rejecting application', 'error');
+    }
   };
 
   const formattedTime = time.toLocaleTimeString('en-US', { hour12: false });
@@ -50,23 +100,23 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
         <div className="bg-white p-6 rounded-2xl shadow hover:scale-105 transition cursor-pointer">
           <p className="text-gray-400 text-sm">Total Customers</p>
-          <p className="text-3xl font-black text-slate-700 mt-2">24</p>
-          <p className="text-green-500 text-xs mt-1">↑ 3 new this week</p>
+          <p className="text-3xl font-black text-slate-700 mt-2">{stats.activeCustomers}</p>
+          <p className="text-green-500 text-xs mt-1">Live from database</p>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow hover:scale-105 transition cursor-pointer">
-          <p className="text-gray-400 text-sm">Total Employees</p>
-          <p className="text-3xl font-black text-blue-600 mt-2">12</p>
-          <p className="text-gray-400 text-xs mt-1">Manager · Delivery · Cashier</p>
+          <p className="text-gray-400 text-sm">Total Staff</p>
+          <p className="text-3xl font-black text-blue-600 mt-2">{stats.totalStaff}</p>
+          <p className="text-gray-400 text-xs mt-1">Active employees</p>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow hover:scale-105 transition cursor-pointer">
-          <p className="text-gray-400 text-sm">Orders This Month</p>
-          <p className="text-3xl font-black text-purple-600 mt-2">138</p>
-          <p className="text-green-500 text-xs mt-1">↑ 12% vs last month</p>
+          <p className="text-gray-400 text-sm">Total Orders</p>
+          <p className="text-3xl font-black text-purple-600 mt-2">{stats.totalOrders}</p>
+          <p className="text-green-500 text-xs mt-1">All time count</p>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow hover:scale-105 transition cursor-pointer">
-          <p className="text-gray-400 text-sm">Pending Join Requests</p>
-          <p className="text-3xl font-black text-orange-500 mt-2">{requests.length}</p>
-          <p className="text-orange-400 text-xs mt-1">Awaiting approval</p>
+          <p className="text-gray-400 text-sm">Low Stock Items</p>
+          <p className="text-3xl font-black text-rose-500 mt-2">{stats.lowStock}</p>
+          <p className="text-rose-400 text-xs mt-1">Needs attention</p>
         </div>
       </div>
 
@@ -86,23 +136,23 @@ export default function Dashboard() {
             <div key={req.id} className="border-2 border-gray-100 rounded-2xl p-5 hover:border-orange-200 transition">
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 ${req.bgUrl} rounded-2xl flex items-center justify-center text-2xl`}>👤</div>
+                  <div className={`w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center text-2xl`}>👤</div>
                   <div>
-                    <p className="font-bold text-gray-800 text-lg">{req.name}</p>
+                    <p className="font-bold text-gray-800 text-lg">{req.full_name}</p>
                     <p className="text-gray-500 text-sm">📞 {req.phone} &nbsp;|&nbsp; 📧 {req.email}</p>
                     <p className="text-gray-400 text-xs mt-1">
-                      Applied for: <span className={`font-semibold ${req.color}`}>{req.role}</span> &nbsp;|&nbsp; Applied on: {req.applied}
+                      Applied for: <span className={`font-semibold text-blue-600`}>{req.role}</span> &nbsp;|&nbsp; Applied on: {new Date(req.applied_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <button 
-                    onClick={() => handleApprove(req.id, req.name)}
+                  <button
+                    onClick={() => handleApprove(req.id, req.full_name)}
                     className="bg-green-500 text-white px-5 py-2 rounded-xl font-semibold hover:bg-green-600 transition text-sm"
                   >
                     ✅ Approve
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleReject(req.id)}
                     className="bg-red-100 text-red-600 px-5 py-2 rounded-xl font-semibold hover:bg-red-200 transition text-sm"
                   >
@@ -111,7 +161,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="mt-3 ml-16 text-sm text-gray-500 bg-gray-50 rounded-xl p-3">
-                <span className="font-semibold">Cover Note:</span> "{req.note}"
+                <span className="font-semibold">Cover Note:</span> "{req.description}"
               </div>
             </div>
           ))}
@@ -119,7 +169,7 @@ export default function Dashboard() {
           {requests.length === 0 && (
             <div className="p-10 text-center text-gray-400">
               <div className="text-5xl mb-3">✅</div>
-              <p className="font-semibold">All join requests have been processed!</p>
+              <p className="font-semibold">No pending join requests</p>
             </div>
           )}
         </div>
@@ -141,30 +191,21 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody className="text-gray-700">
-              <tr className="border-b hover:bg-gray-50">
-                <td className="py-3 px-6 font-semibold">Amit Sharma</td>
-                <td className="px-6">📊 Manager</td>
-                <td className="px-6 text-gray-400">manager</td>
-                <td className="px-6">
-                  <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-semibold">Active</span>
-                </td>
-              </tr>
-              <tr className="border-b hover:bg-gray-50">
-                <td className="py-3 px-6 font-semibold">Neha Singh</td>
-                <td className="px-6">🛵 Delivery</td>
-                <td className="px-6 text-gray-400">delivery</td>
-                <td className="px-6">
-                  <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-semibold">Active</span>
-                </td>
-              </tr>
-              <tr className="border-b hover:bg-gray-50">
-                <td className="py-3 px-6 font-semibold">Priya Patel</td>
-                <td className="px-6">💳 Cashier</td>
-                <td className="px-6 text-gray-400">cashier</td>
-                <td className="px-6">
-                  <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-semibold">Active</span>
-                </td>
-              </tr>
+              {staffList.map(s => (
+                <tr key={s.id} className="border-b hover:bg-gray-50">
+                  <td className="py-3 px-6 font-semibold">{s.name}</td>
+                  <td className="px-6">{s.role}</td>
+                  <td className="px-6 text-gray-400">{s.username}</td>
+                  <td className="px-6">
+                    <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-semibold">{s.status}</span>
+                  </td>
+                </tr>
+              ))}
+              {staffList.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="py-5 text-center text-gray-400">No active staff found</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

@@ -10,6 +10,9 @@ export default function ManageStock() {
   const [activeTab, setActiveTab] = useState("all"); // 'all' | 'low'
   const [editModal, setEditModal] = useState(null); // product being edited
   const [addModal, setAddModal] = useState(false);
+  const [restockModal, setRestockModal] = useState(null); // product being restocked
+  const [restockData, setRestockData] = useState({ qty: '', expiry_date: '', batch_code: '' });
+
   const [newProduct, setNewProduct] = useState({
     name: "",
     category: "Cone",
@@ -56,18 +59,18 @@ export default function ManageStock() {
     return matchesSearch && matchesCategory && matchesTab;
   });
 
-  // ✅ RESTOCK
-  const handleRestock = async (id, qty) => {
+  // ✅ RESTOCK SAVE
+  const handleRestockSave = async () => {
+    if (!restockData.qty || !restockData.expiry_date) {
+      showToast("⚠️ Quantity and Expiry Date are required", "error");
+      return;
+    }
     try {
-      const product = products.find((p) => p.id === id);
-
-      await axios.put(`${API}/updateProduct/${id}`, {
-        ...product,
-        stock: product.stock + Number(qty),
-      });
-
+      await axios.put(`${API}/restock/${restockModal.id}`, restockData);
+      setRestockModal(null);
+      setRestockData({ qty: '', expiry_date: '', batch_code: '' });
       fetchProducts();
-      showToast("✅ Stock restocked!", "success");
+      showToast("✅ Stock restocked and batch recorded!", "success");
     } catch (err) {
       showToast("❌ Restock failed", "error");
     }
@@ -77,7 +80,6 @@ export default function ManageStock() {
   const handleEditSave = async () => {
     try {
       await axios.put(`${API}/updateProduct/${editModal.id}`, editModal);
-
       setEditModal(null);
       fetchProducts();
       showToast("✏️ Product updated!", "success");
@@ -136,6 +138,7 @@ export default function ManageStock() {
       showToast("❌ Delete failed", "error");
     }
   };
+
   const stockBadge = (stock, threshold) => {
     if (stock <= threshold) {
       return (
@@ -316,7 +319,7 @@ export default function ManageStock() {
                     product={p}
                     stockBadge={stockBadge}
                     onEdit={() => setEditModal({ ...p })}
-                    onRestock={handleRestock}
+                    onRestock={(p) => setRestockModal(p)}
                     onDelete={handleDelete}
                   />
                 ))
@@ -325,6 +328,39 @@ export default function ManageStock() {
           </table>
         </div>
       </div>
+
+      {/* ====== RESTOCK MODAL ====== */}
+      {restockModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={e => { if (e.target === e.currentTarget) setRestockModal(null); }}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-md p-8">
+            <h2 className="text-2xl font-black text-gray-800 mb-2">Restock Product</h2>
+            <p className="text-gray-400 text-sm mb-6">{restockModal.name}</p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Quantity (Cartons) *</label>
+                <input type="number" value={restockData.qty} onChange={e => setRestockData({ ...restockData, qty: e.target.value })}
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-green-500" placeholder="e.g. 50" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Expiry Date *</label>
+                <input type="date" value={restockData.expiry_date} onChange={e => setRestockData({ ...restockData, expiry_date: e.target.value })}
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-green-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Batch Code (Optional)</label>
+                <input type="text" value={restockData.batch_code} onChange={e => setRestockData({ ...restockData, batch_code: e.target.value })}
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-green-500" placeholder="e.g. B-902" />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-8">
+              <button onClick={handleRestockSave} className="flex-1 py-3 bg-green-600 text-white font-bold rounded-2xl hover:bg-green-700 transition">🚀 Restock Now</button>
+              <button onClick={() => setRestockModal(null)} className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ====== EDIT MODAL ====== */}
       {editModal && (
@@ -335,95 +371,31 @@ export default function ManageStock() {
           }}
         >
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <div>
-                <h2 className="text-2xl font-black text-gray-800">
-                  Edit Product
-                </h2>
-                <p className="text-gray-400 text-sm">
-                  Update product details and stock level
-                </p>
-              </div>
-            </div>
+            <h2 className="text-2xl font-black text-gray-800 mb-6">Edit Product</h2>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                    Product Name
-                  </label>
-                  <input
-                    value={editModal.name}
-                    onChange={(e) =>
-                      setEditModal({ ...editModal, name: e.target.value })
-                    }
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-indigo-400 outline-none text-sm"
-                  />
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Product Name</label>
+                  <input value={editModal.name} onChange={(e) => setEditModal({ ...editModal, name: e.target.value })}
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-indigo-400 outline-none text-sm" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                    Price (₹ / carton)
-                  </label>
-                  <input
-                    type="number"
-                    value={editModal.price}
-                    onChange={(e) =>
-                      setEditModal({
-                        ...editModal,
-                        price: Number(e.target.value),
-                      })
-                    }
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-indigo-400 outline-none text-sm"
-                  />
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Price (₹ / carton)</label>
+                  <input type="number" value={editModal.price} onChange={(e) => setEditModal({ ...editModal, price: Number(e.target.value) })}
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-indigo-400 outline-none text-sm" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                    Stock (cartons)
-                  </label>
-                  <input
-                    type="number"
-                    value={editModal.stock}
-                    onChange={(e) =>
-                      setEditModal({
-                        ...editModal,
-                        stock: Number(e.target.value),
-                      })
-                    }
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-indigo-400 outline-none text-sm"
-                  />
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Stock (cartons)</label>
+                  <input type="number" value={editModal.stock} onChange={(e) => setEditModal({ ...editModal, stock: Number(e.target.value) })}
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-indigo-400 outline-none text-sm" />
                 </div>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                  Low Stock Threshold
-                </label>
-                <input
-                  type="number"
-                  value={editModal.lowThreshold}
-                  onChange={(e) =>
-                    setEditModal({
-                      ...editModal,
-                      lowThreshold: Number(e.target.value),
-                    })
-                  }
-                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-indigo-400 outline-none text-sm"
-                />
               </div>
             </div>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={handleEditSave}
-                className="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 transition"
-              >
-                💾 Save Changes
-              </button>
-              <button
-                onClick={() => setEditModal(null)}
-                className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition"
-              >
-                Cancel
-              </button>
+            <div className="flex gap-3 mt-8">
+              <button onClick={handleEditSave} className="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 transition">💾 Save Changes</button>
+              <button onClick={() => setEditModal(null)} className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition">Cancel</button>
             </div>
           </div>
         </div>
@@ -431,130 +403,50 @@ export default function ManageStock() {
 
       {/* ====== ADD PRODUCT MODAL ====== */}
       {addModal && (
-        <div
-          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setAddModal(false);
-          }}
-        >
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={(e) => { if (e.target === e.currentTarget) setAddModal(false); }}>
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-8">
             <div className="text-center mb-6">
               <div className="text-5xl mb-2">➕</div>
-              <h2 className="text-2xl font-black text-gray-800">
-                Add New Product
-              </h2>
-              <p className="text-gray-400 text-sm mt-1">
-                Fill in the product details to add it to the catalogue
-              </p>
+              <h2 className="text-2xl font-black text-gray-800">Add New Product</h2>
             </div>
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                    Product Name *
-                  </label>
-                  <input
-                    placeholder="e.g. Pista Kulfi"
-                    value={newProduct.name}
-                    onChange={(e) =>
-                      setNewProduct({ ...newProduct, name: e.target.value })
-                    }
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-indigo-400 outline-none text-sm"
-                  />
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Product Name *</label>
+                  <input placeholder="e.g. Pista Kulfi" value={newProduct.name} onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-indigo-400 outline-none text-sm" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                    Category
-                  </label>
-                  <select
-                    value={newProduct.category}
-                    onChange={(e) =>
-                      setNewProduct({ ...newProduct, category: e.target.value })
-                    }
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-indigo-400 outline-none text-sm bg-white"
-                  >
-                    {CATEGORIES.filter((c) => c !== "All").map((c) => (
-                      <option key={c}>{c}</option>
-                    ))}
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Category</label>
+                  <select value={newProduct.category} onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-indigo-400 outline-none text-sm bg-white" >
+                    {CATEGORIES.filter((c) => c !== "All").map((c) => (<option key={c}>{c}</option>))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                    Unit Description *
-                  </label>
-                  <input
-                    placeholder="e.g. Carton (24 pieces)"
-                    value={newProduct.unit}
-                    onChange={(e) =>
-                      setNewProduct({ ...newProduct, unit: e.target.value })
-                    }
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-indigo-400 outline-none text-sm"
-                  />
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Unit *</label>
+                  <input placeholder="e.g. Carton (24 pieces)" value={newProduct.unit} onChange={(e) => setNewProduct({ ...newProduct, unit: e.target.value })}
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-indigo-400 outline-none text-sm" />
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                    Price (₹) *
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="720"
-                    value={newProduct.price}
-                    onChange={(e) =>
-                      setNewProduct({ ...newProduct, price: e.target.value })
-                    }
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-indigo-400 outline-none text-sm"
-                  />
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Price (₹) *</label>
+                  <input type="number" placeholder="720" value={newProduct.price} onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-indigo-400 outline-none text-sm" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                    Initial Stock *
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="50"
-                    value={newProduct.stock}
-                    onChange={(e) =>
-                      setNewProduct({ ...newProduct, stock: e.target.value })
-                    }
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-indigo-400 outline-none text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                    Low Threshold
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="10"
-                    value={newProduct.lowThreshold}
-                    onChange={(e) =>
-                      setNewProduct({
-                        ...newProduct,
-                        lowThreshold: e.target.value,
-                      })
-                    }
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-indigo-400 outline-none text-sm"
-                  />
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Initial Stock *</label>
+                  <input type="number" placeholder="50" value={newProduct.stock} onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:border-indigo-400 outline-none text-sm" />
                 </div>
               </div>
             </div>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={handleAddProduct}
-                className="flex-1 py-3 bg-gradient-to-r from-slate-700 to-indigo-600 text-white font-bold rounded-2xl hover:opacity-90 transition shadow-lg"
-              >
-                🎉 Add Product
-              </button>
-              <button
-                onClick={() => setAddModal(false)}
-                className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition"
-              >
-                Cancel
-              </button>
+            <div className="flex gap-3 mt-8">
+              <button onClick={handleAddProduct} className="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-2xl hover:opacity-90 transition">🎉 Add Product</button>
+              <button onClick={() => setAddModal(false)} className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition">Cancel</button>
             </div>
           </div>
         </div>
@@ -562,9 +454,7 @@ export default function ManageStock() {
 
       {/* Toast */}
       {toast.show && (
-        <div
-          className={`fixed bottom-6 right-6 text-white px-6 py-3 rounded-2xl shadow-2xl font-semibold z-50 transition-all ${toast.type === "error" ? "bg-red-500" : "bg-green-500"}`}
-        >
+        <div className={`fixed bottom-6 right-6 text-white px-6 py-3 rounded-2xl shadow-2xl font-semibold z-50 transition-all ${toast.type === "error" ? "bg-red-500" : "bg-green-500"}`}>
           {toast.message}
         </div>
       )}
@@ -572,69 +462,28 @@ export default function ManageStock() {
   );
 }
 
-// ---- Row sub-component with inline restock ----
-function ProductRow({ product, stockBadge, onEdit, onRestock ,onDelete }) {
-  const [restockQty, setRestockQty] = useState("");
-
+// ---- Row sub-component ----
+function ProductRow({ product, stockBadge, onEdit, onRestock, onDelete }) {
   const isLow = product.stock <= product.lowThreshold;
 
   return (
     <tr className={`hover:bg-gray-50 transition ${isLow ? "bg-red-50" : ""}`}>
       <td className="py-4 px-6">
-        <div className="flex items-center gap-3">
-          <span className="font-bold text-gray-800">{product.name}</span>
-        </div>
+        <span className="font-bold text-gray-800">{product.name}</span>
       </td>
       <td className="px-6 text-gray-500">{product.category}</td>
       <td className="px-6 text-gray-500 text-xs">{product.unit}</td>
-      <td className="px-6 font-semibold text-indigo-700">
-        ₹{product.price.toLocaleString("en-IN")}
-      </td>
+      <td className="px-6 font-semibold text-indigo-700">₹{product.price.toLocaleString("en-IN")}</td>
       <td className="px-6">
-        <span
-          className={`font-black text-lg ${isLow ? "text-red-600" : "text-gray-800"}`}
-        >
-          {product.stock}
-        </span>
+        <span className={`font-black text-lg ${isLow ? "text-red-600" : "text-gray-800"}`}>{product.stock}</span>
         <span className="text-gray-400 text-xs ml-1">cartons</span>
       </td>
-      <td className="px-6">
-        {stockBadge(product.stock, product.lowThreshold)}
-      </td>
+      <td className="px-6">{stockBadge(product.stock, product.lowThreshold)}</td>
       <td className="px-6 py-3">
         <div className="flex items-center gap-2">
-          {/* Restock */}
-          <input
-            type="number"
-            min="1"
-            placeholder="Qty"
-            value={restockQty}
-            onChange={(e) => setRestockQty(e.target.value)}
-            className="w-16 border-2 border-gray-200 rounded-lg px-2 py-1 text-xs focus:border-green-400 outline-none text-center"
-          />
-          <button
-            onClick={() => {
-              if (restockQty > 0) {
-                onRestock(product.id, restockQty);
-                setRestockQty("");
-              }
-            }}
-            className="bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-600 transition"
-          >
-            + Restock
-          </button>
-          <button
-            onClick={onEdit}
-            className="bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-200 transition"
-          >
-            ✏️ Edit
-          </button>
-          <button
-            onClick={() => onDelete(product.id)}
-            className="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-200 transition"
-          >
-            🗑️ Delete
-          </button>
+          <button onClick={() => onRestock(product)} className="bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-600 transition">📦 Restock</button>
+          <button onClick={onEdit} className="bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-200 transition">✏️ Edit</button>
+          <button onClick={() => onDelete(product.id)} className="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-200 transition">🗑️ Delete</button>
         </div>
       </td>
     </tr>
