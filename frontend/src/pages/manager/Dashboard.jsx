@@ -40,9 +40,7 @@ export default function Dashboard() {
     // Fetch Delivery Staff
     axios.get(`${API_PROXY}/staff`).then(res => {
       const dbStaff = res.data || [];
-      console.log("Total Staff Fetched:", dbStaff.length);
       const dbDeliveryBoys = dbStaff.filter(s => s.role.toLowerCase() === 'delivery');
-      console.log("Delivery Boys Filtered:", dbDeliveryBoys.length, dbDeliveryBoys);
       setDeliveryStaff(dbDeliveryBoys);
     }).catch(err => console.error("Error fetching staff:", err));
 

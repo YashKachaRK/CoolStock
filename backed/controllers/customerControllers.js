@@ -67,8 +67,6 @@ exports.addCustomer = async (req, res) => {
     const tempPassword = Math.random().toString(36).slice(-8);
     const username = (shop || name).toLowerCase().replace(/\s+/g, '_') + Math.floor(1000 + Math.random() * 9000);
 
-    console.log(`🆕 Adding Customer: ${email} | Temp Password: ${tempPassword}`);
-
     try {
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
@@ -82,7 +80,6 @@ exports.addCustomer = async (req, res) => {
         try {
             const { subject, html } = templates.staffCredentials(name, username, tempPassword);
             await sendEmail(email, subject, html);
-            console.log(`📧 Credentials sent successfully to customer: ${email}`);
         } catch (e) {
             console.error("❌ Customer Welcome Email Failed:", e.message);
         }
