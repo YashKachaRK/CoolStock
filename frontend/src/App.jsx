@@ -1,16 +1,4 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import axios from 'axios';
-
-// Global Axios Config
-axios.interceptors.request.use(config => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-}, error => {
-  return Promise.reject(error);
-});
 import Home from './pages/Home';
 import Login from './pages/Login';
 import AdminLayout from './layouts/AdminLayout';
@@ -42,7 +30,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-
+        
         {/* Admin routes */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="dashboard" element={<AdminDashboard />} />
@@ -52,7 +40,7 @@ function App() {
           <Route path="view_employees" element={<ManageStaff />} />
           <Route path="view_customers" element={<ManageCustomers />} />
         </Route>
-
+        
         {/* Manager routes */}
         <Route path="/manager" element={<ManagerLayout />}>
           <Route path="dashboard" element={<ManagerDashboard />} />
@@ -60,19 +48,19 @@ function App() {
           <Route path="view_products" element={<ManagerInventory />} />
           <Route path="target_orders" element={<ManagerOrders />} />
         </Route>
-
+        
         {/* Delivery routes */}
         <Route path="/delivery" element={<DeliveryLayout />}>
           <Route path="dashboard" element={<DeliveryDashboard />} />
           <Route path="profile" element={<DeliveryProfile />} />
         </Route>
-
+        
         {/* Cashier routes */}
         <Route path="/cashier" element={<CashierLayout />}>
           <Route path="dashboard" element={<CashierDashboard />} />
           <Route path="profile" element={<CashierProfile />} />
         </Route>
-
+        
         {/* Customer routes */}
         <Route path="/customer" element={<CustomerLayout />}>
           <Route path="place_order" element={<PlaceOrder />} />

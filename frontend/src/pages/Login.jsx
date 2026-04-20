@@ -26,6 +26,17 @@ export default function Login() {
     setError("");
     setSuccess("");
 
+    // 1. Hardcoded Admin Check
+    if (
+      role === "Admin" &&
+      email === "admin2026@gmail.com" &&
+      password === "2026"
+    ) {
+      localStorage.setItem("user", JSON.stringify({ email, role: "Admin" }));
+      navigate("/admin/dashboard");
+      return;
+    } 
+    
     // 2. Staff/Customer Login via Backend
     try {
       const res = await axios.post("http://localhost:5000/loginStaff", {
@@ -34,18 +45,16 @@ export default function Login() {
         role,
       });
 
-      const { user, token } = res.data;
+      const user = res.data.user;
       localStorage.setItem("user", JSON.stringify(user));
-      localStorage.setItem("token", token);
       setSuccess("Login Successful!");
 
       // Navigation based on Role
-      if (user.role === "Admin") navigate("/admin/dashboard");
-      else if (user.role === "Manager") navigate("/manager/dashboard");
+      if (user.role === "Manager") navigate("/manager/dashboard");
       else if (user.role === "Cashier") navigate("/cashier/dashboard");
       else if (user.role === "Delivery") navigate("/delivery/dashboard");
-      else if (user.role === "Customer") navigate("/customer/place_order");
-
+      else if (user.role === "Customer") navigate("/customer/shop"); // Assuming path exists
+      
     } catch (err) {
       setError(err.response?.data?.msg || "Login Failed. Please check credentials.");
     }
@@ -108,9 +117,9 @@ export default function Login() {
         ) : (
           /* Registration Form remains similar but ensure it calls a real API in production */
           <form onSubmit={handleRegister} className="space-y-4">
-            {/* ... register inputs ... */}
-            <button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white py-3 rounded-xl font-bold">📝 Register My Shop</button>
-            <button type="button" onClick={() => setIsRegistering(false)} className="w-full text-gray-500 text-sm">Cancel</button>
+             {/* ... register inputs ... */}
+             <button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white py-3 rounded-xl font-bold">📝 Register My Shop</button>
+             <button type="button" onClick={() => setIsRegistering(false)} className="w-full text-gray-500 text-sm">Cancel</button>
           </form>
         )}
       </div>

@@ -1,93 +1,87 @@
 const db = require("../config/db");
 const bcrypt = require("bcrypt");
-const { sendEmail, templates } = require("../utils/emailService");
-
-// Helper for Promise-based queries
-const query = (sql, params) => {
-  return new Promise((resolve, reject) => {
-    db.query(sql, params, (err, result) => {
-      if (err) reject(err);
-      else resolve(result);
-    });
-  });
-};
 
 exports.addStaff = async (req, res) => {
-  const { name, role, username, email, phone, password, joined, status } = req.body;
+  const { name, role, username, email, phone, password, joined, status } =
+    req.body;
 
   try {
-    let formattedDate = joined;
-    try {
-      if (!joined || joined === "Invalid Date") {
-        formattedDate = new Date().toISOString().split("T")[0];
-      } else {
-        formattedDate = new Date(joined).toISOString().split("T")[0];
-      }
-    } catch (e) {
-      formattedDate = new Date().toISOString().split("T")[0];
-    }
+    // ✅ Convert date to YYYY-MM-DD
+    const formattedDate = new Date(joined).toISOString().split("T")[0];
 
+    // ✅ Hash password
     const hashPassword = await bcrypt.hash(password, 10);
 
     const sql = `INSERT INTO staff 
-          (name, role, username, email, phone, password, joined, status)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+      (name, role, username, email, phone, password, joined, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
 
-    await query(sql, [name, role, username, email, phone, hashPassword, formattedDate, status || 'Active']);
-
-    // Send Credentials Email
-    try {
-      const { subject, html } = templates.staffCredentials(name, username, password);
-      await sendEmail(email, subject, html);
-    } catch (e) {
-      console.error("Staff Welcome Email Failed:", e);
-    }
-
-    res.send("Staff Added Successfully");
+    db.query(
+      sql,
+      [name, role, username, email, phone, hashPassword, formattedDate, status],
+      (err, result) => {
+        if (err) {
+          console.log(err);
+          return res.status(500).send("Error while inserting data");
+        }
+        res.send("Staff Added Successfully");
+      },
+    );
   } catch (error) {
-    console.error("Add Staff Error:", error);
-    res.status(500).send(error.code === 'ER_DUP_ENTRY' ? "Email already exists" : "Server Error");
+    console.log(error);
+    res.status(500).send("Server Error");
   }
 };
 
-exports.staff = async (req, res) => {
-  try {
-    const result = await query("SELECT * FROM staff", []);
+exports.staff = (req, res) => {
+  const sql = "SELECT * FROM staff";
+  db.query(sql, (err, result) => {
+    if (err) return res.status(500).send(err);
     res.json(result);
-  } catch (err) {
-    res.status(500).send(err);
-  }
+  });
 };
 
-exports.updateStaff = async (req, res) => {
+exports.updateStaff = (req, res) => {
   const { id } = req.params;
-  const { name, role, email, phone, username } = req.body;
-  try {
-    const sql = `UPDATE staff SET name=?, role=?, email=?, phone=?, username=? WHERE id=?`;
-    await query(sql, [name, role, email, phone, username, id]);
+  const { name, role, email, phone } = req.body;
+
+  const sql = `
+    UPDATE staff 
+    SET name=?, role=?, email=?, phone=? 
+    WHERE id=?
+  `;
+
+  db.query(sql, [name, role, email, phone, id], (err, result) => {
+    if (err) return res.status(500).send(err);
     res.send("Updated Successfully");
-  } catch (err) {
-    res.status(500).send(err);
-  }
+  });
 };
 
-exports.deleteStaff = async (req, res) => {
+exports.deleteStaff = (req, res) => {
   const { id } = req.params;
-  try {
-    await query(`DELETE FROM staff WHERE id=?`, [id]);
+  const sql = ` delete  from staff where id=?`;
+
+  db.query(sql, [id], (err) => {
+    if (err) {
+      throw err;
+    }
     res.send("delete");
-  } catch (err) {
-    res.status(500).send(err);
-  }
+  });
 };
 
-exports.updateStatus = async (req, res) => {
+
+exports.updateStatus = (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
-  try {
-    await query("UPDATE staff SET status=? WHERE id=?", [status, id]);
+
+  const sql = "UPDATE staff SET status=? WHERE id=?";
+
+  db.query(sql, [status, id], (err, result) => {
+    if (err) {
+      console.log(err);
+      return res.status(500).send("Error updating status");
+    }
+
     res.send("Status updated");
-  } catch (err) {
-    res.status(500).send("Error updating status");
-  }
+  });
 };
