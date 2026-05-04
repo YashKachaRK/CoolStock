@@ -15,17 +15,22 @@ export default function PlaceOrder() {
   useEffect(() => {
     const initPage = async () => {
       try {
-        // 1. Fetch Products
+        // 1. Load customer from localStorage (set during login)
+        const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
+        if (!storedUser || storedUser.role !== 'Customer') {
+          console.error('Not logged in as customer');
+          setLoading(false);
+          return;
+        }
+        setProfileData(storedUser);
+
+        // 2. Fetch Products
         const prodRes = await axios.get(`${API}/products`);
         setProducts(prodRes.data);
 
-        // 2. Fetch Customer Profile
-        const profRes = await axios.get(`${API}/customerProfile`);
-        setProfileData(profRes.data);
-
-        // Initialize cart
+        // Initialize cart with string keys (MongoDB _id is a string)
         const initialCart = {};
-        prodRes.data.forEach(p => initialCart[p.id] = 0);
+        prodRes.data.forEach(p => initialCart[String(p._id || p.id)] = 0);
         setCart(initialCart);
 
         setLoading(false);
@@ -40,14 +45,14 @@ export default function PlaceOrder() {
   const changeQty = (id, delta) => {
     setCart(prev => ({
       ...prev,
-      [id]: Math.max(0, (prev[id] || 0) + delta)
+      [String(id)]: Math.max(0, (prev[String(id)] || 0) + delta)
     }));
   };
 
   const calculateTotal = () => {
     let total = 0;
     Object.entries(cart).forEach(([id, qty]) => {
-      const product = products.find(p => p.id === Number(id));
+      const product = products.find(p => String(p._id || p.id) === String(id));
       if (product) total += product.price * qty;
     });
     return total;
@@ -62,13 +67,13 @@ export default function PlaceOrder() {
       return;
     }
 
-    const orderNumber = 'ORD-' + (Math.floor(Math.random() * 9000) + 1000);
+    const orderNumber = 'ORD-' + Date.now().toString().slice(-6);
     const selectedItems = [];
     Object.entries(cart).forEach(([id, qty]) => {
       if (qty > 0) {
-        const product = products.find(p => p.id === Number(id));
+        const product = products.find(p => String(p._id || p.id) === String(id));
         selectedItems.push({
-          product_id: Number(id),
+          product_id: id,
           quantity: qty,
           price_per_unit: product.price
         });
@@ -76,7 +81,7 @@ export default function PlaceOrder() {
     });
 
     try {
-      await axios.post(`${API}/placeOrder`, {
+      await axios.post(`${API}/orders`, {
         customer_id: profileData.id,
         order_number: orderNumber,
         amount: total,
@@ -87,11 +92,11 @@ export default function PlaceOrder() {
       setModalData({ id: orderNumber });
       // Reset cart
       const resetCart = {};
-      products.forEach(p => resetCart[p.id] = 0);
+      products.forEach(p => resetCart[String(p._id || p.id)] = 0);
       setCart(resetCart);
     } catch (err) {
       console.error(err);
-      alert('Error placing order');
+      alert('Error placing order: ' + (err.response?.data || err.message));
     }
   };
 
@@ -121,23 +126,26 @@ export default function PlaceOrder() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {products.map(p => (
-              <div key={p.id} className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition border border-gray-100 flex gap-4">
-                <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center text-4xl shrink-0">🍦</div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-gray-800 text-lg">{p.name}</h3>
-                  <p className="text-xs text-gray-400 font-semibold">{p.unit}</p>
-                  <div className="flex justify-between items-end mt-3">
-                    <p className="text-purple-600 font-black text-xl">₹{p.price}</p>
-                    <div className="flex items-center gap-2 bg-gray-50 rounded-xl p-1 px-2 border">
-                      <button onClick={() => changeQty(p.id, -1)} className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-red-500 font-bold">−</button>
-                      <span className="font-black text-lg w-6 text-center">{cart[p.id] || 0}</span>
-                      <button onClick={() => changeQty(p.id, 1)} className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-green-500 font-bold">+</button>
+            {products.map(p => {
+              const pid = String(p._id || p.id);
+              return (
+                <div key={pid} className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition border border-gray-100 flex gap-4">
+                  <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center text-4xl shrink-0">🍦</div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-gray-800 text-lg">{p.name}</h3>
+                    <p className="text-xs text-gray-400 font-semibold">{p.unit}</p>
+                    <div className="flex justify-between items-end mt-3">
+                      <p className="text-purple-600 font-black text-xl">₹{p.price}</p>
+                      <div className="flex items-center gap-2 bg-gray-50 rounded-xl p-1 px-2 border">
+                        <button onClick={() => changeQty(pid, -1)} className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-red-500 font-bold">−</button>
+                        <span className="font-black text-lg w-6 text-center">{cart[pid] || 0}</span>
+                        <button onClick={() => changeQty(pid, 1)} className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-green-500 font-bold">+</button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -156,7 +164,7 @@ export default function PlaceOrder() {
                 </div>
               ) : (
                 Object.entries(cart).map(([id, qty]) => {
-                  const product = products.find(p => p.id === Number(id));
+                  const product = products.find(p => String(p._id || p.id) === String(id));
                   return qty > 0 && product && (
                     <div key={id} className="flex justify-between items-center group">
                       <div>
