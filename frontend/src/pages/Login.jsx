@@ -50,10 +50,11 @@ export default function Login() {
       setSuccess("Login Successful!");
 
       // Navigation based on Role
-      if (user.role === "Manager") navigate("/manager/dashboard");
+      if (user.role === "Admin") navigate("/admin/dashboard");
+      else if (user.role === "Manager") navigate("/manager/dashboard");
       else if (user.role === "Cashier") navigate("/cashier/dashboard");
       else if (user.role === "Delivery") navigate("/delivery/dashboard");
-      else if (user.role === "Customer") navigate("/customer/shop"); // Assuming path exists
+      else if (user.role === "Customer") navigate("/customer/place_order");
       
     } catch (err) {
       setError(err.response?.data?.msg || "Login Failed. Please check credentials.");

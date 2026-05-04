@@ -1,47 +1,45 @@
-const db = require("../config/db");
-const bcrypt = require("bcrypt");
+const Staff = require("../models/Staff");
+const Customer = require("../models/Customer");
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-exports.loginStaff = (req, res) => {
-  const { email, role, password } = req.body;
+exports.loginStaff = async (req, res) => {
+  try {
+    const { email, role, password } = req.body;
 
-  // 1. Determine which table to check based on role
-  const table = role === 'Customer' ? 'customers' : 'staff';
-  const sql = `SELECT * FROM ${table} WHERE email = ?`;
-
-  db.query(sql, [email], async (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ msg: "Server error" });
+    let user;
+    if (role === 'Customer') {
+      user = await Customer.findOne({ email });
+    } else {
+      user = await Staff.findOne({ email });
     }
 
-    if (result.length === 0) {
+    if (!user) {
       return res.status(400).json({ msg: "User Not Found" });
     }
 
-    const user = result[0];
-
-    // 2. Check Password
+    // Check Password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ msg: "Invalid password" });
     }
 
-    // 3. Check Role (only for staff, customers are always 'Customer')
-    if (table === 'staff' && user.role !== role) {
+    // Check Role
+    if (role !== 'Customer' && user.role !== role) {
       return res.status(403).json({ msg: "Role mismatch. Please select the correct role." });
     }
 
-    // 4. Generate Token
-    // Use shop name for customers if present, else user name
-    const displayName = table === 'customers' ? (user.shop || user.name) : user.name;
-    const userRole = table === 'customers' ? 'Customer' : user.role;
+    // Generate Token
+    const displayName = role === 'Customer' ? (user.shop || user.name) : user.name;
+    const userRole = role === 'Customer' ? 'Customer' : user.role;
 
     const payload = {
-      id: user.id,
+      id: user._id,
       email: user.email,
       role: userRole,
-      name: displayName
+      name: role === 'Customer' ? user.name : user.name,
+      shop: role === 'Customer' ? (user.shop || '') : undefined,
+      addr: role === 'Customer' ? (user.addr || '') : undefined,
     };
 
     const token = jwt.sign(payload, process.env.JWT_SECRET || "fallback_secret", { expiresIn: "8h" });
@@ -51,5 +49,8 @@ exports.loginStaff = (req, res) => {
       token,
       user: payload
     });
-  });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Server error" });
+  }
 };

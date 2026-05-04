@@ -1,18 +1,15 @@
-const db = require("../config/db");
-const bcrypt = require("bcrypt");
+const Staff = require("../models/Staff");
+const bcrypt = require("bcryptjs");
 
-exports.loginStaff = (req, res) => {
-  const { email, role, password } = req.body;
+exports.loginStaff = async (req, res) => {
+  try {
+    const { email, role, password } = req.body;
 
-  const sql = "select * from staff where email = ?";
+    const user = await Staff.findOne({ email });
 
-  db.query(sql, [email], async (err, result) => {
-    if (err) return res.status(500).send("Server error");
-
-    if (result.length === 0) {
+    if (!user) {
       return res.status(400).json({ msg: "User Not Found" });
     }
-    const user = result[0];
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
@@ -20,17 +17,19 @@ exports.loginStaff = (req, res) => {
     }
 
     if (user.role !== role) {
-      return res.status(403).json({ msg: "Role is mismatcg...." })
+      return res.status(403).json({ msg: "Role is mismatcg...." });
     }
-    // Done
 
     res.json({
       msg: "Login Succesfull",
       user: {
-        id: user.id,
+        id: user._id,
         email: user.email,
         role: user.role,
       },
     });
-  });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server error");
+  }
 };

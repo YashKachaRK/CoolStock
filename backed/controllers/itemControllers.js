@@ -1,21 +1,21 @@
-const db = require ('../config/db')
+const Application = require("../models/Application");
+const emailService = require("../utils/emailService");
 
 // add data
-
-exports.addApplication = (req , res)=> {
-  const {full_name , email , phone , role , description} = req.body
-
-  db.query(
-    "insert into applications (full_name , email , phone , role , description) values (?,?,?,?,?)",
-    [full_name , email ,phone , role ,description ],
-    (err , result)=>{
-      if(err){
-        return
-        res.send(err);
-
-      }
-      res.json({message :"Addes" })
+exports.addApplication = async (req , res)=> {
+  try {
+    const {full_name , email , phone , role , description} = req.body;
+    
+    const newApp = new Application({ full_name, email, phone, role, description });
+    await newApp.save();
+    
+    // ── Trigger Email: Application Received ──
+    if (email) {
+      emailService.sendApplicationReceived(newApp);
     }
-  )
 
-}
+    res.json({message :"Added" });
+  } catch (err) {
+    res.status(500).send(err);
+  }
+};

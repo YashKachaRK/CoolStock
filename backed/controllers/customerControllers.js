@@ -1,31 +1,39 @@
-const db = require("../config/db");
-const bcrypt = require("bcrypt");
+const Customer = require("../models/Customer");
+const Order = require("../models/Order");
+const bcrypt = require("bcryptjs");
 const { sendEmail, templates } = require("../utils/emailService");
-
-// Helper for Promise-based queries
-const query = (sql, params) => {
-    return new Promise((resolve, reject) => {
-        db.query(sql, params, (err, result) => {
-            if (err) reject(err);
-            else resolve(result);
-        });
-    });
-};
 
 // Get all customers (Admin only)
 exports.getAllCustomers = async (req, res) => {
-    const sql = `
-        SELECT c.*, 
-               COUNT(o.id) as orders, 
-               COALESCE(SUM(o.amount), 0) as totalSpent 
-        FROM customers c
-        LEFT JOIN orders o ON c.id = o.customer_id
-        GROUP BY c.id
-        ORDER BY c.joined DESC
-    `;
     try {
-        const result = await query(sql, []);
-        res.json(result);
+        const customers = await Customer.aggregate([
+            {
+                $lookup: {
+                    from: 'orders',
+                    localField: '_id',
+                    foreignField: 'customer_id',
+                    as: 'customerOrders'
+                }
+            },
+            {
+                $addFields: {
+                    orders: { $size: "$customerOrders" },
+                    totalSpent: { $sum: "$customerOrders.amount" }
+                }
+            },
+            {
+                $project: {
+                    customerOrders: 0,
+                    password: 0
+                }
+            },
+            {
+                $sort: { joined: -1 }
+            }
+        ]);
+        
+        // Map _id to id for frontend
+        res.json(customers.map(c => ({ ...c, id: c._id })));
     } catch (err) {
         console.error(err);
         res.status(500).send("Error fetching customers");
@@ -34,11 +42,11 @@ exports.getAllCustomers = async (req, res) => {
 
 // Get profile for logged-in customer
 exports.getCustomerProfile = async (req, res) => {
-    const customerId = req.user.id;
     try {
-        const result = await query("SELECT id, name, shop, addr, phone, email, status, joined FROM customers WHERE id = ?", [customerId]);
-        if (result.length === 0) return res.status(404).send("Profile not found");
-        res.json(result[0]);
+        const customerId = req.user.id;
+        const customer = await Customer.findById(customerId).select('-password');
+        if (!customer) return res.status(404).send("Profile not found");
+        res.json({ ...customer.toObject(), id: customer._id });
     } catch (err) {
         console.error(err);
         res.status(500).send("Server Error");
@@ -47,10 +55,10 @@ exports.getCustomerProfile = async (req, res) => {
 
 // Update profile for logged-in customer
 exports.updateCustomerProfile = async (req, res) => {
-    const customerId = req.user.id;
-    const { name, shop, addr, phone } = req.body;
     try {
-        await query("UPDATE customers SET name=?, shop=?, addr=?, phone=? WHERE id=?", [name, shop, addr, phone, customerId]);
+        const customerId = req.user.id;
+        const { name, shop, addr, phone } = req.body;
+        await Customer.findByIdAndUpdate(customerId, { name, shop, addr, phone });
         res.send("Profile updated successfully");
     } catch (err) {
         console.error(err);
@@ -60,23 +68,25 @@ exports.updateCustomerProfile = async (req, res) => {
 
 // Add new customer
 exports.addCustomer = async (req, res) => {
-    const { name, shop, addr, phone, email, status } = req.body;
-    const joined = new Date().toISOString().split("T")[0];
-
-    // 1. Generate Credentials
-    const tempPassword = Math.random().toString(36).slice(-8);
-    const username = (shop || name).toLowerCase().replace(/\s+/g, '_') + Math.floor(1000 + Math.random() * 9000);
-
     try {
+        const { name, shop, addr, phone, email, status } = req.body;
+
+        // Check if customer exists
+        const existing = await Customer.findOne({ email });
+        if (existing) return res.status(400).send("Email already exists");
+
+        // Generate Credentials
+        const tempPassword = Math.random().toString(36).slice(-8);
+        const username = (shop || name).toLowerCase().replace(/\s+/g, '_') + Math.floor(1000 + Math.random() * 9000);
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
-        // 2. Insert into Customers table
-        const sqlCustomer = `INSERT INTO customers (name, shop, addr, phone, email, password, status, joined) 
-                             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+        const newCustomer = new Customer({
+            name, shop, addr, phone, email, password: hashedPassword, status: status || 'Active'
+        });
 
-        await query(sqlCustomer, [name, shop, addr, phone, email, hashedPassword, status || 'Active', joined]);
+        await newCustomer.save();
 
-        // 3. Send Credentials Email
+        // Send Credentials Email
         try {
             const { subject, html } = templates.staffCredentials(name, username, tempPassword);
             await sendEmail(email, subject, html);
@@ -87,16 +97,15 @@ exports.addCustomer = async (req, res) => {
         res.send("Customer added successfully with portal access");
     } catch (e) {
         console.error("❌ Add Customer Error:", e);
-        res.status(500).send(e.code === 'ER_DUP_ENTRY' ? "Email already exists" : "Server Error");
+        res.status(500).send("Server Error");
     }
 };
 
 exports.updateCustomerStatus = async (req, res) => {
-    const { id } = req.params;
-    const { status } = req.body;
-
     try {
-        await query("UPDATE customers SET status=? WHERE id=?", [status, id]);
+        const { id } = req.params;
+        const { status } = req.body;
+        await Customer.findByIdAndUpdate(id, { status });
         res.send("Status updated");
     } catch (err) {
         res.status(500).send("Error updating customer status");
@@ -104,9 +113,9 @@ exports.updateCustomerStatus = async (req, res) => {
 };
 
 exports.deleteCustomer = async (req, res) => {
-    const { id } = req.params;
     try {
-        await query("DELETE FROM customers WHERE id=?", [id]);
+        const { id } = req.params;
+        await Customer.findByIdAndDelete(id);
         res.send("Customer deleted");
     } catch (err) {
         res.status(500).send("Error deleting customer");

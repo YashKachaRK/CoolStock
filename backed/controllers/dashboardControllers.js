@@ -1,42 +1,53 @@
-const db = require("../config/db");
+const Order = require("../models/Order");
+const Customer = require("../models/Customer");
+const Staff = require("../models/Staff");
+const Product = require("../models/Product");
 
 exports.getAdminStats = async (req, res) => {
-    const queries = {
-        totalRevenue: "SELECT SUM(amount) as revenue FROM orders WHERE status='Paid'",
-        totalOrders: "SELECT COUNT(*) as count FROM orders",
-        activeCustomers: "SELECT COUNT(*) as count FROM customers WHERE status='Active'",
-        totalStaff: "SELECT COUNT(*) as count FROM staff",
-        lowStock: "SELECT COUNT(*) as count FROM products WHERE stock < 50",
-        recentOrders: "SELECT o.*, c.shop FROM orders o JOIN customers c ON o.customer_id = c.id ORDER BY date DESC LIMIT 5"
-    };
-
     try {
-        const stats = {};
-        const keys = Object.keys(queries);
+        const [
+            revenueResult,
+            totalOrders,
+            activeCustomers,
+            totalStaff,
+            lowStock,
+            recentOrdersData
+        ] = await Promise.all([
+            Order.aggregate([
+                { $match: { status: 'Paid' } },
+                { $group: { _id: null, revenue: { $sum: "$amount" } } }
+            ]),
+            Order.countDocuments(),
+            Customer.countDocuments({ status: 'Active' }),
+            Staff.countDocuments(),
+            Product.countDocuments({ stock: { $lt: 50 } }), // assuming 50 is the hardcoded threshold from original
+            Order.find()
+                .populate('customer_id', 'shop name')
+                .sort({ date: -1, _id: -1 })
+                .limit(5)
+        ]);
 
-        // Wrap db.query in promises
-        const promises = keys.map(key => {
-            return new Promise((resolve, reject) => {
-                db.query(queries[key], (err, result) => {
-                    if (err) reject(err);
-                    else resolve({ key, result });
-                });
-            });
+        const totalRevenue = revenueResult.length > 0 ? revenueResult[0].revenue : 0;
+        
+        // Format recent orders
+        const recentOrders = recentOrdersData.map(order => {
+            const o = order.toObject();
+            return {
+                ...o,
+                id: o._id,
+                shop: o.customer_id ? (o.customer_id.shop || o.customer_id.name) : 'Unknown'
+            };
         });
 
-        const results = await Promise.all(promises);
-
-        results.forEach(({ key, result }) => {
-            if (key === 'recentOrders') {
-                stats[key] = result;
-            } else if (key === 'totalRevenue') {
-                stats[key] = result[0].revenue || 0;
-            } else {
-                stats[key] = result[0].count || 0;
-            }
+        res.json({
+            totalRevenue,
+            totalOrders,
+            activeCustomers,
+            totalStaff,
+            lowStock,
+            recentOrders
         });
 
-        res.json(stats);
     } catch (err) {
         console.error("Dashboard Stats Error:", err);
         if (!res.headersSent) {
@@ -45,10 +56,16 @@ exports.getAdminStats = async (req, res) => {
     }
 };
 
-exports.getManagerStats = (req, res) => {
-    const sql = "SELECT status, COUNT(*) as count FROM orders GROUP BY status";
-    db.query(sql, (err, result) => {
-        if (err) return res.status(500).send(err);
-        res.json(result);
-    });
+exports.getManagerStats = async (req, res) => {
+    try {
+        const stats = await Order.aggregate([
+            { $group: { _id: "$status", count: { $sum: 1 } } }
+        ]);
+        
+        // Format to match old output [{ status: 'Pending', count: 5 }]
+        const formattedStats = stats.map(s => ({ status: s._id, count: s.count }));
+        res.json(formattedStats);
+    } catch (err) {
+        res.status(500).send(err);
+    }
 };
