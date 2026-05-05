@@ -453,13 +453,38 @@ exports.cancelOrder = async (req, res) => {
 };
 
 // ════════════════════════════════════════════════════════════════════════════
-// 17. Generic status update (admin override)
+// 17. CASHIER: Orders verified (Paid) — optionally filtered by cashier
+// ════════════════════════════════════════════════════════════════════════════
+exports.getVerifiedPayments = async (req, res) => {
+    try {
+        const { cashier_id } = req.query;
+        const query = { status: 'Paid' };
+        if (cashier_id) query.payment_verified_by = cashier_id;
+        const orders = await populateOrder(Order.find(query)).sort({ paid_at: -1 });
+        res.json(orders.map(formatOrder));
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error fetching verified payments');
+    }
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// 18. Generic status update (admin override)
 // ════════════════════════════════════════════════════════════════════════════
 exports.updateOrderStatus = async (req, res) => {
     try {
-        await Order.findByIdAndUpdate(req.params.id, { status: req.body.status });
-        res.json({ message: "Status updated" });
+        const { status } = req.body;
+        const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
+        
+        // ── Trigger Email: Status Update ──
+        const fullOrder = await populateOrder(Order.findById(req.params.id));
+        if (fullOrder && fullOrder.customer_id && fullOrder.customer_id.email) {
+            emailService.sendOrderStatusUpdate(fullOrder.customer_id, fullOrder, status);
+        }
+
+        res.json({ message: "Status updated and customer notified" });
     } catch (err) {
+        console.error(err);
         res.status(500).send("Error updating status");
     }
 };

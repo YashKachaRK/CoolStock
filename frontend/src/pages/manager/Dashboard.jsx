@@ -60,10 +60,13 @@ export default function Dashboard() {
       return;
     }
 
+    const managerData = JSON.parse(localStorage.getItem('user') || '{}');
+
     try {
-      await axios.put(`${API_PROXY}/updateOrderStatus/${orderId}`, {
-        status: 'Assigned',
-        delivery_boy_id: deliveryBoyId
+      await axios.put(`${API_PROXY}/orders/assign/${orderId}`, {
+        delivery_boy_id: deliveryBoyId,
+        manager_id: managerData.id || managerData._id,
+        manager_name: managerData.name || 'Manager'
       });
       showToast(`📌 Order assigned to ${deliveryBoyName}!`);
       fetchOrders();
@@ -76,8 +79,8 @@ export default function Dashboard() {
   const formattedTime = time.toLocaleTimeString('en-US', { hour12: false });
   const formattedDate = time.toDateString();
 
-  const pendingOrders = orders.filter(o => o.status === 'Pending');
-  const assignedOrders = orders.filter(o => o.status !== 'Pending');
+  const pendingOrders = orders.filter(o => o.status === 'Ordered');
+  const assignedOrders = orders.filter(o => o.status !== 'Ordered');
 
   return (
     <div className="p-4 md:p-8 w-full">
@@ -251,7 +254,7 @@ function OrderItem({ order, deliveryStaff, onAssign }) {
           </select>
           <button
             onClick={() => {
-              const boy = deliveryStaff.find(s => s.id === Number(selectedDeliveryBoy));
+              const boy = deliveryStaff.find(s => String(s._id || s.id) === String(selectedDeliveryBoy));
               onAssign(order.id, selectedDeliveryBoy, boy?.name);
             }}
             className="bg-indigo-600 text-white py-2 px-4 rounded-xl font-bold text-sm hover:bg-indigo-700 transition shadow"
