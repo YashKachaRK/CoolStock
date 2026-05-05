@@ -110,3 +110,35 @@ exports.deleteBatch = async (req, res) => {
         res.status(500).send("Error deleting batch");
     }
 };
+
+// Bulk remove all expired batches
+exports.removeExpiredBatches = async (req, res) => {
+    try {
+        const today = new Date();
+        const expiredBatches = await ProductBatch.find({ expiry_date: { $lt: today } });
+        
+        if (expiredBatches.length === 0) {
+            return res.json({ message: "No expired batches found." });
+        }
+
+        let removedCount = 0;
+        let adjustedStock = 0;
+
+        for (const batch of expiredBatches) {
+            // Reduce product stock
+            await Product.findByIdAndUpdate(batch.product_id, { $inc: { stock: -batch.quantity } });
+            await ProductBatch.findByIdAndDelete(batch._id);
+            removedCount++;
+            adjustedStock += batch.quantity;
+        }
+
+        res.json({ 
+            message: `Successfully removed ${removedCount} expired batches and adjusted stock by -${adjustedStock}.`,
+            removedCount,
+            adjustedStock
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error removing expired batches");
+    }
+};

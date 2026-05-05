@@ -13,6 +13,7 @@ export default function Dashboard() {
   const [totalProductsCount, setTotalProductsCount] = useState(0);
   const [lowStockCount, setLowStockCount] = useState(0);
   const [expiringSoon, setExpiringSoon] = useState([]);
+  const [expiredCount, setExpiredCount] = useState(0);
   const [orders, setOrders] = useState([]);
   const [deliveryStaff, setDeliveryStaff] = useState([]);
 
@@ -33,9 +34,16 @@ export default function Dashboard() {
     }).catch(err => console.error("Error fetching products:", err));
 
     // Fetch Expiring Batches
-    axios.get(`${API_PROXY}/expiring-products`).then(res => {
+    axios.get(`${API_PROXY}/product-batches/expiring`).then(res => {
       setExpiringSoon(res.data || []);
     }).catch(err => console.error("Error fetching expiring batches:", err));
+
+    // Fetch Expired Count
+    axios.get(`${API_PROXY}/product-batches`).then(res => {
+      const today = new Date();
+      const expired = res.data.filter(b => new Date(b.expiry_date) < today);
+      setExpiredCount(expired.length);
+    }).catch(err => console.error("Error fetching batches for expired count:", err));
 
     // Fetch Delivery Staff
     axios.get(`${API_PROXY}/staff`).then(res => {
@@ -48,6 +56,26 @@ export default function Dashboard() {
 
     return () => clearInterval(timer);
   }, []);
+
+  const handleRemoveExpired = async () => {
+    if (!window.confirm(`Are you sure you want to remove all ${expiredCount} expired batches? This will adjust the stock accordingly.`)) return;
+
+    try {
+      const res = await axios.delete(`${API_PROXY}/product-batches/expired`);
+      showToast(`✅ ${res.data.message}`);
+      setExpiredCount(0);
+      // Refresh inventory stats
+      axios.get(`${API_PROXY}/products`).then(res => {
+        setTotalProductsCount(res.data.length);
+        const lowStock = res.data.filter(p => p.stock <= p.lowThreshold);
+        setLowStockCount(lowStock.length);
+      });
+      setExpiringSoon([]); // Clear expiring list as well if needed or refresh
+    } catch (err) {
+      console.error(err);
+      showToast('❌ Error removing expired stock');
+    }
+  };
 
   const showToast = (message) => {
     setToast({ show: true, message });
@@ -124,24 +152,39 @@ export default function Dashboard() {
       </div>
 
       {/* Expiry Alert Banner */}
-      {expiringSoon.length > 0 && (
-        <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-5 mb-8 flex items-start gap-4">
-          <div className="text-3xl">⏳</div>
+      {(expiringSoon.length > 0 || expiredCount > 0) && (
+        <div className={`border-2 rounded-2xl p-5 mb-8 flex items-start gap-4 transition-all ${expiredCount > 0 ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}`}>
+          <div className="text-3xl">{expiredCount > 0 ? '🚫' : '⏳'}</div>
           <div className="flex-1">
-            <p className="font-bold text-amber-700 text-lg">Inventory Expiring Soon!</p>
-            <p className="text-amber-600 text-sm mt-0.5">
-              {expiringSoon
-                .map((b) => `${b.product_name} (Expires: ${new Date(b.expiry_date).toLocaleDateString()})`)
-                .join(" · ")}
+            <p className={`font-bold text-lg ${expiredCount > 0 ? 'text-red-700' : 'text-amber-700'}`}>
+              {expiredCount > 0 ? `Critical: ${expiredCount} Expired Batches Found!` : 'Inventory Expiring Soon!'}
             </p>
-            <p className="text-amber-400 text-xs mt-1 font-semibold italic">* Proactive batch rotation suggested</p>
+            <p className={`${expiredCount > 0 ? 'text-red-600' : 'text-amber-600'} text-sm mt-0.5`}>
+              {expiredCount > 0 
+                ? 'There are products in the system that have already passed their expiry date. They should be removed immediately.'
+                : expiringSoon.map((b) => `${b.product_id?.name || 'Item'} (Exp: ${new Date(b.expiry_date).toLocaleDateString()})`).join(" · ")
+              }
+            </p>
+            <p className={`${expiredCount > 0 ? 'text-red-400' : 'text-amber-400'} text-xs mt-1 font-semibold italic`}>
+              {expiredCount > 0 ? '* Removal will automatically deduct stock quantities' : '* Proactive batch rotation suggested'}
+            </p>
           </div>
-          <button
-            onClick={() => axios.get(`${API_PROXY}/trigger-alerts`).then(() => showToast("📨 Email alerts dispatched to managers!"))}
-            className="bg-amber-600 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-amber-700 transition"
-          >
-            Dispatch Alerts 📨
-          </button>
+          <div className="flex gap-2">
+            {expiredCount > 0 && (
+              <button
+                onClick={handleRemoveExpired}
+                className="bg-red-600 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-red-700 transition shadow-lg shadow-red-100"
+              >
+                🗑️ Remove Expired Stock
+              </button>
+            )}
+            <button
+              onClick={() => axios.get(`${API_PROXY}/product-batches/expiring`).then(() => showToast("📨 Email alerts dispatched to managers!"))}
+              className={`${expiredCount > 0 ? 'bg-gray-100 text-gray-600' : 'bg-amber-600 text-white'} px-4 py-2 rounded-xl font-bold text-sm hover:opacity-80 transition`}
+            >
+              Dispatch Alerts 📨
+            </button>
+          </div>
         </div>
       )}
 
