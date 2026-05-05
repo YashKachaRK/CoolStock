@@ -2,9 +2,9 @@ const express = require("express");
 const router = express.Router();
 
 // ── Controllers ───────────────────────────────────────────────────────────
-const { loginStaff }     = require("../controllers/authController");
+const { loginStaff, forgotPassword, resetPassword } = require("../controllers/authController");
 const { addApplication } = require("../controllers/itemControllers");
-const { addStaff, staff, updateStaff, deleteStaff, updateStatus } = require("../controllers/admiControllers");
+const { addStaff, staff, updateStaff, deleteStaff, updateStatus, getStaffProfile, updateStaffProfile } = require("../controllers/admiControllers");
 const { getAllProduct, addProducts, updateProduct, restock, deleteProdcuts } = require('../controllers/productController');
 const { getAllCustomers } = require('../controllers/customerControllers');
 const { getAdminStats, getManagerStats } = require("../controllers/dashboardControllers");
@@ -13,7 +13,7 @@ const {
     getAllOrders, getAuditLog, getOrderHistory, getOrderDetails,
     getMyOrders, getAssignedOrders, getDeliveryHistory,
     getPendingPayments, getPendingOrders, getDeliveryBoys,
-    cancelOrder, updateOrderStatus
+    cancelOrder, updateOrderStatus, getVerifiedPayments
 } = require('../controllers/orderControllers');
 const {
     addBatch, getBatchesByProduct, getAllBatches,
@@ -27,6 +27,8 @@ const bcrypt = require("bcryptjs");
 
 // ── AUTH ─────────────────────────────────────────────────────────────────
 router.post("/loginStaff", loginStaff);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 
 // ── STAFF (Admin) ─────────────────────────────────────────────────────────
 router.post("/addStaff",          addStaff);
@@ -34,6 +36,8 @@ router.get('/staff',              staff);
 router.put("/updateStaff/:id",    updateStaff);
 router.delete("/deleteStaff/:id", deleteStaff);
 router.put("/updateStatus/:id",   updateStatus);
+router.get('/staffProfile/:id',        getStaffProfile);
+router.put('/staffProfile/:id',        updateStaffProfile);
 
 // ── PRODUCTS (Admin / Manager) ───────────────────────────────────────────
 router.get('/products',              getAllProduct);
@@ -71,6 +75,7 @@ router.put('/orders/delivered/:id',  markDelivered);          // → Deposited
 
 // Cashier
 router.get('/orders/pending-payments',       getPendingPayments);  // status: Deposited
+router.get('/orders/verified-payments',      getVerifiedPayments); // status: Paid (filter by cashier_id)
 router.put('/orders/verify-payment/:id',     verifyPayment);       // → Paid
 
 // Admin + Manager

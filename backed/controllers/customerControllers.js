@@ -1,7 +1,7 @@
 const Customer = require("../models/Customer");
 const Order = require("../models/Order");
 const bcrypt = require("bcryptjs");
-const { sendEmail, templates } = require("../utils/emailService");
+const emailService = require("../utils/emailService");
 
 // Get all customers (Admin only)
 exports.getAllCustomers = async (req, res) => {
@@ -88,8 +88,7 @@ exports.addCustomer = async (req, res) => {
 
         // Send Credentials Email
         try {
-            const { subject, html } = templates.staffCredentials(name, username, tempPassword);
-            await sendEmail(email, subject, html);
+            await emailService.sendCustomerWelcome(newCustomer, username, tempPassword);
         } catch (e) {
             console.error("❌ Customer Welcome Email Failed:", e.message);
         }

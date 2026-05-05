@@ -30,6 +30,8 @@ const sendEmail = async (to, subject, html) => {
     }
 };
 
+exports.sendEmail = sendEmail;
+
 // ── Order Templates ──────────────────────────────────────────────────
 
 exports.sendOrderConfirmation = async (customer, order) => {
@@ -189,4 +191,42 @@ exports.sendLowStockAlert = async (managerEmail, product) => {
         </div>
     `;
     return sendEmail(managerEmail, subject, html);
+};
+
+exports.sendPasswordReset = async (user, resetCode) => {
+    const subject = `Password Reset Code - CoolStock`;
+    const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
+            <h2 style="color: #6366f1;">🔑 Password Reset</h2>
+            <p>Hello <b>${user.name}</b>,</p>
+            <p>You requested to reset your password. Use the following code to proceed:</p>
+            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin: 20px 0; text-align: center;">
+                <h1 style="letter-spacing: 5px; color: #1e293b; margin: 0;">${resetCode}</h1>
+            </div>
+            <p>This code will expire in 10 minutes. If you didn't request this, please ignore this email.</p>
+            <br/>
+            <p>Thanks,<br/>CoolStock Team</p>
+        </div>
+    `;
+    return sendEmail(user.email, subject, html);
+};
+
+exports.sendCustomerWelcome = async (customer, username, tempPassword) => {
+    const subject = `Welcome to CoolStock - Your Portal Credentials`;
+    const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-top: 5px solid #6366f1;">
+            <h2 style="color: #6366f1;">🍦 Welcome to CoolStock!</h2>
+            <p>Hello <b>${customer.name}</b>,</p>
+            <p>Your business account has been created. You can now log in to the Customer Portal to place orders and track deliveries.</p>
+            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin: 20px 0;">
+                <p style="margin: 5px 0;"><b>Login URL:</b> Customer Portal</p>
+                <p style="margin: 5px 0;"><b>Username/Email:</b> ${customer.email}</p>
+                <p style="margin: 5px 0;"><b>Temporary Password:</b> <code style="background: #e2e8f0; padding: 2px 5px; border-radius: 4px;">${tempPassword}</code></p>
+            </div>
+            <p style="color: #64748b; font-size: 12px;">*Please change your password after your first login.</p>
+            <br/>
+            <p>Best Regards,<br/>CoolStock Team</p>
+        </div>
+    `;
+    return sendEmail(customer.email, subject, html);
 };

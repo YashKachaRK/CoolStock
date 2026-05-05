@@ -5,7 +5,7 @@ import axios from 'axios';
 export default function PlaceOrder() {
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState({});
-  const [urgency, setUrgency] = useState('Regular');
+  const [urgency, setUrgency] = useState('Normal');
   const [profileData, setProfileData] = useState(null);
   const [modalData, setModalData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -201,9 +201,8 @@ export default function PlaceOrder() {
                   onChange={(e) => setUrgency(e.target.value)}
                   className="w-full border-2 border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 focus:border-purple-400 outline-none bg-gray-50 cursor-pointer"
                 >
-                  <option value="Regular">🗓️ Regular (1-2 Days)</option>
+                  <option value="Normal">🗓️ Normal (1-2 Days)</option>
                   <option value="Urgent">⚡ Urgent (Tomorrow)</option>
-                  <option value="Very Urgent">🔥 Immediate (Today)</option>
                 </select>
               </div>
 

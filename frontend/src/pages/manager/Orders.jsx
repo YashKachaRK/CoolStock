@@ -40,7 +40,7 @@ export default function Orders() {
       order.order_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.customer_name?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    if (filter === 'Pending') return matchesSearch && order.status === 'Pending';
+    if (filter === 'Pending') return matchesSearch && order.status === 'Ordered';
     if (filter === 'Completed') return matchesSearch && order.status === 'Delivered';
     return matchesSearch;
   });
@@ -66,7 +66,7 @@ export default function Orders() {
       {/* Overview Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {[
-          { label: 'Unassigned', value: orders.filter(o => o.status === 'Pending').length, icon: '⏳', color: 'amber' },
+          { label: 'Unassigned', value: orders.filter(o => o.status === 'Ordered').length, icon: '⏳', color: 'amber' },
           { label: 'In Transit', value: orders.filter(o => o.status === 'In Transit').length, icon: '🛵', color: 'blue' },
           { label: 'Completed', value: orders.filter(o => o.status === 'Delivered').length, icon: '✅', color: 'emerald' },
           { label: "Today's Revenue", value: `₹${orders.filter(o => o.status === 'Paid' || o.status === 'Delivered').reduce((s, o) => s + o.amount, 0).toLocaleString()}`, icon: '💵', color: 'indigo' }

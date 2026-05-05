@@ -69,3 +69,26 @@ exports.updateStatus = async (req, res) => {
     res.status(500).send("Error updating status");
   }
 };
+
+exports.getStaffProfile = async (req, res) => {
+  try {
+    const staff = await Staff.findById(req.params.id).select('-password');
+    if (!staff) return res.status(404).json({ message: 'Staff not found' });
+    res.json({ ...staff.toObject(), id: staff._id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error fetching staff profile');
+  }
+};
+
+exports.updateStaffProfile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, phone } = req.body;
+    await Staff.findByIdAndUpdate(id, { name, phone });
+    res.json({ message: 'Profile updated successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error updating staff profile');
+  }
+};
