@@ -17,7 +17,7 @@ const {
 } = require('../controllers/orderControllers');
 const {
     addBatch, getBatchesByProduct, getAllBatches,
-    getExpiringBatches, markAlertSent, deleteBatch
+    getExpiringBatches, markAlertSent, deleteBatch, removeExpiredBatches
 } = require('../controllers/productBatchController');
 const emailService = require("../utils/emailService");
 
@@ -55,6 +55,7 @@ router.get('/product-batches',               getAllBatches);
 router.get('/product-batches/expiring',      getExpiringBatches);
 router.get('/product-batches/:product_id',   getBatchesByProduct);
 router.put('/product-batches/alert/:id',     markAlertSent);
+router.delete('/product-batches/expired',   removeExpiredBatches);
 router.delete('/product-batches/:id',        deleteBatch);
 
 // ── ORDERS — role-based workflow ─────────────────────────────────────────
@@ -115,12 +116,16 @@ router.put('/admin/updateApplication/:id', async (req, res) => {
             const tempPassword = `Cool@${Math.floor(1000 + Math.random() * 9000)}`;
             
             // 2. Add to Staff Table
+            let mappedRole = app.role;
+            if (app.role === 'Cashier / POS Operator') mappedRole = 'Cashier';
+            if (app.role === 'Delivery Person')       mappedRole = 'Delivery';
+
             const hashPassword = await bcrypt.hash(tempPassword, 10);
             const newStaff = new Staff({
                 name: app.full_name,
                 email: app.email,
                 phone: app.phone,
-                role: app.role, // Assuming applicant.role matches staff roles (Manager, Delivery, Cashier)
+                role: mappedRole, 
                 password: hashPassword,
                 status: 'Active'
             });

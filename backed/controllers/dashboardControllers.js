@@ -2,6 +2,7 @@ const Order = require("../models/Order");
 const Customer = require("../models/Customer");
 const Staff = require("../models/Staff");
 const Product = require("../models/Product");
+const ProductBatch = require("../models/ProductBatch");
 
 exports.getAdminStats = async (req, res) => {
     try {
@@ -11,6 +12,7 @@ exports.getAdminStats = async (req, res) => {
             activeCustomers,
             totalStaff,
             lowStock,
+            expiredCount,
             recentOrdersData
         ] = await Promise.all([
             Order.aggregate([
@@ -20,7 +22,8 @@ exports.getAdminStats = async (req, res) => {
             Order.countDocuments(),
             Customer.countDocuments({ status: 'Active' }),
             Staff.countDocuments(),
-            Product.countDocuments({ stock: { $lt: 50 } }), // assuming 50 is the hardcoded threshold from original
+            Product.countDocuments({ $expr: { $lte: ["$stock", "$lowThreshold"] } }),
+            ProductBatch.countDocuments({ expiry_date: { $lt: new Date() } }),
             Order.find()
                 .populate('customer_id', 'shop name')
                 .sort({ date: -1, _id: -1 })
@@ -45,6 +48,7 @@ exports.getAdminStats = async (req, res) => {
             activeCustomers,
             totalStaff,
             lowStock,
+            expiredCount,
             recentOrders
         });
 

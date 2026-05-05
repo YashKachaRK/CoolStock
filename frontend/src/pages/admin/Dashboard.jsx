@@ -9,6 +9,7 @@ export default function Dashboard() {
     activeCustomers: 0,
     totalStaff: 0,
     lowStock: 0,
+    expiredCount: 0,
     recentOrders: []
   });
   const [requests, setRequests] = useState([]);
@@ -78,6 +79,19 @@ export default function Dashboard() {
     }
   };
 
+  const handleRemoveExpired = async () => {
+    if (!window.confirm(`Are you sure you want to remove all ${stats.expiredCount} expired batches? This will adjust the stock accordingly.`)) return;
+
+    try {
+      const res = await axios.delete(`${API}/product-batches/expired`);
+      showToast(`✅ ${res.data.message}`, 'success');
+      fetchDashboardData(); // Refresh everything
+    } catch (err) {
+      console.error(err);
+      showToast('❌ Error removing expired stock', 'error');
+    }
+  };
+
   const formattedTime = time.toLocaleTimeString('en-US', { hour12: false });
   const formattedDate = time.toDateString();
 
@@ -118,6 +132,25 @@ export default function Dashboard() {
           <p className="text-rose-400 text-xs mt-1">Needs attention</p>
         </div>
       </div>
+
+      {/* Expired Stock Banner */}
+      {stats.expiredCount > 0 && (
+        <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6 mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-4">
+            <div className="text-4xl">🚫</div>
+            <div>
+              <h2 className="text-xl font-black text-red-800">Critical: {stats.expiredCount} Expired Batches Found!</h2>
+              <p className="text-red-600 text-sm">Expired products are still in the system. Please remove them to maintain inventory accuracy.</p>
+            </div>
+          </div>
+          <button
+            onClick={handleRemoveExpired}
+            className="w-full md:w-auto bg-red-600 text-white px-8 py-3 rounded-xl font-black text-sm hover:bg-red-700 transition shadow-lg shadow-red-100"
+          >
+            🗑️ Bulk Remove Expired Stock
+          </button>
+        </div>
+      )}
 
       {/* Join Requests Section */}
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-8">
